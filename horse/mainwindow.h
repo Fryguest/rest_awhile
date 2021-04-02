@@ -25,10 +25,11 @@ public:
     void Init();
     void InitMission();
     void Solve(Point2d pixelPoint);
+    void Repaint();
 
 private:
     std::vector<std::vector<int>> v;
-    Point2d lastPoint;
+    std::vector<Point2d> path;
     MainParam mParam;
 
 protected:
@@ -42,6 +43,8 @@ public:
 private slots:
     void on_nextMissionButton_clicked();
     void on_resetButton_clicked();
+
+    void on_backOneStepButton_clicked();
 
 private:
     Ui::MainWindow *ui;

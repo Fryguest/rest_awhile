@@ -58,33 +58,35 @@ void MainWindow::Solve(Point2d pixelPoint)
     int x, y;
     if (!Cal(pixelPoint, x, y)) return;
     if (v[x][y]) return;
+    Point2d lastPoint = path.back();
     int dx = abs(x - lastPoint.x), dy = abs(y - lastPoint.y);
     if (dx + dy == 3 and (dx == 2 or dy == 2))
     {
-        v[lastPoint.x][lastPoint.y]=1;
-        lastPoint.x = x;
-        lastPoint.y = y;
-        v[lastPoint.x][lastPoint.y]=2;
-    }
-
-    int cnt = 0;
-    for (int i = 0; i < mParam.size; i ++)
-    {
-        for (int j = 0; j < mParam.size; j ++)
-        {
-            if (v[i][j])
-            {
-                cnt++;
-            }
-        }
-    }
-
-    if (cnt == mParam.size * mParam.size)
-    {
-        ui->nextMissionButton->setDisabled(false);
+        path.emplace_back(x, y);
     }
 
     return;
+}
+void MainWindow::Repaint()
+{
+    if (path.size() > 1)
+        ui->backOneStepButton->setDisabled(false);
+    else
+        ui->backOneStepButton->setDisabled(true);
+
+    if (path.size() == mParam.size * mParam.size)
+        ui->nextMissionButton->setDisabled(false);
+    else
+        ui->nextMissionButton->setDisabled(true);
+
+    v.clear();
+    v.resize(mParam.size, vector<int>(mParam.size, 0));
+    for (int i = 0; i < path.size() - 1; i++)
+    {
+        v[path[i].x][path[i].y] = 1;
+    }
+    v[path.back().x][path.back().y]=2;
+    update();
 }
 
 void MainWindow::mousePressEvent(QMouseEvent* event)
@@ -92,7 +94,7 @@ void MainWindow::mousePressEvent(QMouseEvent* event)
     if(event->button()==Qt::LeftButton)
     {
         Solve(Point2d(event->pos().x(), event->pos().y()));
-        update();
+        Repaint();
     }
     return;
 }
@@ -101,17 +103,20 @@ void MainWindow::InitMission()
 {
     v.clear();
     v.resize(mParam.size, vector<int>(mParam.size, 0));
-    lastPoint = Point2d(0,0);
-    v[lastPoint.x][lastPoint.y] = 2;
+    v[0][0] = 2;
+    path.clear();
+    path.emplace_back(0,0);
 
     {
         int x = mParam.ePoint.x + mParam.size * (mParam.width + mParam.gapSize) - mParam.gapSize;
         int y = mParam.ePoint.y + mParam.size * (mParam.width + mParam.gapSize) - mParam.gapSize;
+        ui->backOneStepButton->setGeometry(x + 30, y - 77, 75, 23);
+        ui->backOneStepButton->setDisabled(true);
         ui->resetButton->setGeometry(x + 30, y - 50, 75, 23);
         ui->nextMissionButton->setDisabled(true);
         ui->nextMissionButton->setGeometry(x + 30, y - 23, 75, 23);
     }
-    update();
+    Repaint();
 }
 
 void MainWindow::Init()
@@ -119,6 +124,12 @@ void MainWindow::Init()
     mParam.size = 5;
     InitMission();
     return;
+}
+
+void MainWindow::on_backOneStepButton_clicked()
+{
+    path.pop_back();
+    Repaint();
 }
 
 void MainWindow::on_nextMissionButton_clicked()
@@ -131,4 +142,5 @@ void MainWindow::on_resetButton_clicked()
 {
     InitMission();
 }
+
 
