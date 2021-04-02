@@ -40,9 +40,45 @@ void MainWindow::paintEvent(QPaintEvent *)
                 painter.setPen(Qt::black);
                 painter.setBrush(QBrush(QColor(0,0,0,0)));
             }
-            painter.drawRect(QRectF(QPointF(i * (mParam.width + mParam.gapSize) + mParam.ePoint.x, j * (mParam.width + mParam.gapSize) + mParam.ePoint.y), QSize(mParam.width, mParam.width)));
+            int x = i * (mParam.width + mParam.gapSize) + mParam.ePoint.x;
+            int y = j * (mParam.width + mParam.gapSize) + mParam.ePoint.y;
+            QRectF rect = QRectF(QPointF(x, y), QSize(mParam.width, mParam.width));
+            painter.drawRect(rect);
         }
     }
+
+    if (true)
+    {
+        painter.setPen(Qt::black);
+        int gox[8] = {1,1,2,2,-2,-2,-1,-1};
+        int goy[8] = {2,-2,1,-1,1,-1,2,-2};
+        for (int i = 0; i < mParam.size;i++)
+        {
+            for (int j = 0; j < mParam.size; j++)
+            {
+                if (v[i][j]) continue;
+                int cnt = 0;
+                for (int d = 0; d < 8; d++)
+                {
+                    if (i + gox[d] < 0 or i + gox[d] >= mParam.size or j + goy[d] < 0 or j + goy[d] >= mParam.size) continue;
+                    if (v[i + gox[d]][j + goy[d]] == 0) cnt++;
+                }
+                int x = i * (mParam.width + mParam.gapSize) + mParam.ePoint.x;
+                int y = j * (mParam.width + mParam.gapSize) + mParam.ePoint.y;
+                QRectF rect = QRectF(QPointF(x, y), QSize(mParam.width, mParam.width));
+                painter.drawText(rect, Qt::AlignCenter, std::to_string(cnt).c_str());
+            }
+        }
+    }
+//    for (int i = 0; i < path.size(); i++)
+//    {
+//        int x = path[i].x * (mParam.width + mParam.gapSize) + mParam.ePoint.x;
+//        int y = path[i].y * (mParam.width + mParam.gapSize) + mParam.ePoint.y;
+//        QRectF rect = QRectF(QPointF(x, y), QSize(mParam.width, mParam.width));
+//        if (i == path.size() - 1) painter.setPen(QColor(Qt::black));
+//        else painter.setPen(QColor(Qt::white));
+//        painter.drawText(rect, Qt::AlignCenter, std::to_string(i+1).c_str());
+//    }
 }
 
 void MainWindow::Solve(Point2d pixelPoint)
@@ -142,5 +178,4 @@ void MainWindow::on_resetButton_clicked()
 {
     InitMission();
 }
-
 

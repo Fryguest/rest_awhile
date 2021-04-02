@@ -30,6 +30,7 @@ public:
 private:
     std::vector<std::vector<int>> v;
     std::vector<Point2d> path;
+    bool openHelp;
     MainParam mParam;
 
 protected:
