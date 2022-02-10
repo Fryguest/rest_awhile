@@ -1,5 +1,7 @@
 #include "widget.h"
 #include "ui_widget.h"
+#include "Formula.h"
+#include "Item.h"
 
 Widget::Widget(QWidget *parent) :
     QWidget(parent),
