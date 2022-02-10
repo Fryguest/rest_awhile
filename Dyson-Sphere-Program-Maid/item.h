@@ -64,9 +64,31 @@ void initItemMap(std::map<std::string, Item>& itemMap)
     itemVec[2].push_back("微晶元件");
     itemVec[2].push_back("卡西米尔晶体");
     itemVec[2].push_back("粒子容器");
-
     itemVec[2].push_back("空间翘曲器");
     itemVec[2].push_back("光子合并器");
+    itemVec[2].push_back("量子芯片");
+    itemVec[2].push_back("石墨烯");
+    itemVec[2].push_back("塑料");
+    itemVec[2].push_back("增产剂 Mk.I");
+    itemVec[2].push_back("增产剂 Mk.II");
+    itemVec[2].push_back("增产剂 Mk.III");
+    itemVec[2].push_back("液氢燃料棒");
+    itemVec[2].push_back("氘核燃料棒");
+    itemVec[2].push_back("钛晶石");
+    itemVec[2].push_back("有机晶体");
+    itemVec[2].push_back("重氢");
+    itemVec[2].push_back("位面过滤器");
+    itemVec[2].push_back("钛化玻璃");
+    itemVec[2].push_back("碳纳米管");
+
+
+    itemVec[2].push_back("");
+
+    itemVec[2].push_back("电磁矩阵");
+    itemVec[2].push_back("能量矩阵");
+    itemVec[2].push_back("结构矩阵");
+    itemVec[2].push_back("信息矩阵");
+    itemVec[2].push_back("引力矩阵");
 
 
     itemMap.clear();
@@ -98,30 +120,49 @@ void initFormulaList(std::map<int, Item>& itemMap)
     formulas.push_back(Formula("金刚石", 1, std::vector<std::string>{"高能石墨"}, 30));
     formulas.push_back(Formula("钢材", 1, std::vector<std::string>{"铁块"}, 20));
     formulas.push_back(Formula("电动机", 1, std::vector<std::string>{"铁块","铁块", "齿轮", "磁线圈"}, 30));
-    formulas.push_back(Formula("晶格硅", 2, std::vector<std::string>{"分形硅石"}, 40));
     formulas.push_back(Formula("钛化玻璃", 2, std::vector<std::string>{"玻璃","玻璃","钛块","钛块","水","水"}, 12));
     formulas.push_back(Formula("棱镜", 2, std::vector<std::string>{"玻璃","玻璃","玻璃"}, 30));
-    formulas.push_back(Formula("金刚石", 2, std::vector<std::string>{"金伯利矿石"}, 40));
     formulas.push_back(Formula("齿轮", 1, std::vector<std::string>{"铁块"}, 60));
     formulas.push_back(Formula("电磁涡轮", 1, std::vector<std::string>{"电动机","电动机","磁线圈","磁线圈"}, 30));
     formulas.push_back(Formula("硅石", 1, std::vector<std::string>{"石材","石材","石材","石材","石材","石材","石材","石材","石材","石材"}, 6));
     formulas.push_back(Formula("电路板", 2, std::vector<std::string>{"铁块","铁块","铜块"}, 60));
     formulas.push_back(Formula("引力透镜", 2, std::vector<std::string>{"金刚石","金刚石","金刚石","金刚石","奇异物质"}, 60));
     formulas.push_back(Formula("硫酸", 4, std::vector<std::string>{"精炼油","精炼油","精炼油","精炼油","石矿","石矿","石矿","石矿","石矿","石矿","石矿","石矿", "水", "水", "水", "水"}, 10));
-
-
     formulas.push_back(Formula("电浆激发器", 1, std::vector<std::string>{"磁线圈","磁线圈","磁线圈","磁线圈","棱镜","棱镜"}, 30));
     formulas.push_back(Formula("超级磁场环", 1, std::vector<std::string>{"电磁涡轮","电磁涡轮","磁铁","磁铁","磁铁","高能石墨"}, 20));
-    formulas.push_back(Formula("粒子带宽", 1, std::vector<std::string>{"碳纳米管","碳纳米管","晶格硅","晶格硅","塑料"}, 60.0/8));
+    formulas.push_back(Formula("粒子带宽", 1, std::vector<std::string>{"碳纳米管","碳纳米管","晶格硅","晶格硅","塑料"}, 7.5));
     formulas.push_back(Formula("处理器", 1, std::vector<std::string>{"电路板","电路板","微晶元件","微晶元件"}, 20));
     formulas.push_back(Formula("卡西米尔晶体", 1, std::vector<std::string>{"钛晶石","石墨烯","石墨烯","氢","氢","氢","氢","氢","氢","氢","氢","氢","氢","氢","氢"}, 15));
     formulas.push_back(Formula("粒子容器", 1, std::vector<std::string>{"电磁涡轮","电磁涡轮","铜块","铜块","石墨烯","石墨烯"}, 15));
     formulas.push_back(Formula("空间翘曲器", 8, std::vector<std::string>{"引力透镜"}, 6));
     formulas.push_back(Formula("光子合并器", 1, std::vector<std::string>{"棱镜","棱镜","电路板"}, 20));
+    formulas.push_back(Formula("微晶元件", 1, std::vector<std::string>{"高纯硅块","高纯硅块","铜块"}, 30));
+    formulas.push_back(Formula("量子芯片", 1, std::vector<std::string>{"处理器","处理器","位面过滤器","位面过滤器"}, 10));
+    formulas.push_back(Formula("石墨烯", 2, std::vector<std::string>{"高能石墨","高能石墨","高能石墨","硫酸"}, 20));
+    formulas.push_back(Formula("塑料", 1, std::vector<std::string>{"精炼油","精炼油","高能石墨"}, 20));
+    formulas.push_back(Formula("增产剂 Mk.I", 1, std::vector<std::string>{"煤矿"}, 120));
+    formulas.push_back(Formula("增产剂 Mk.II", 1, std::vector<std::string>{"增产剂 Mk.I","增产剂 Mk.I","金刚石"}, 60));
+    formulas.push_back(Formula("增产剂 Mk.III", 1, std::vector<std::string>{"增产剂 Mk.II","增产剂 Mk.II", "碳纳米管"}, 30));
+    formulas.push_back(Formula("液氢燃料棒", 2, std::vector<std::string>{"钛块","氢","氢","氢","氢","氢","氢","氢","氢","氢","氢"}, 10));
+    formulas.push_back(Formula("氘核燃料棒", 2, std::vector<std::string>{"钛合金","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","重氢","超级磁场环"}, 5));
+    formulas.push_back(Formula("有机晶体", 1, std::vector<std::string>{"塑料","塑料","精炼油","水"}, 10));
+    formulas.push_back(Formula("钛晶石", 1, std::vector<std::string>{"有机晶体","钛块","钛块","钛块"}, 10));
+    formulas.push_back(Formula("重氢", 5, std::vector<std::string>{"氢","氢","氢","氢","氢","氢","氢","氢","氢","氢"}, 24));
+    formulas.push_back(Formula("位面过滤器", 1, std::vector<std::string>{"卡西米尔晶体","钛化玻璃","钛化玻璃"}, 5));
+    formulas.push_back(Formula("碳纳米管", 2, std::vector<std::string>{"石墨烯","石墨烯","石墨烯","钛块"}, 15));
+    formulas.push_back(Formula("奇异物质", 1, std::vector<std::string>{"粒子容器","粒子容器","铁块","铁块","氢","氢","氢","氢","氢","氢","氢","氢","氢","氢"}, 7.5));
+
+    formulas.push_back(Formula("电磁矩阵", 1, std::vector<std::string>{"磁线圈","电路板"}, 20));
+    formulas.push_back(Formula("能量矩阵", 1, std::vector<std::string>{"高能石墨","高能石墨","氢","氢"}, 10));
+    formulas.push_back(Formula("结构矩阵", 1, std::vector<std::string>{"金刚石","钛晶石"}, 7.5));
+    formulas.push_back(Formula("信息矩阵", 1, std::vector<std::string>{"处理器","处理器","粒子宽带"}, 6));
+    formulas.push_back(Formula("引力矩阵", 1, std::vector<std::string>{"引力透镜","量子芯片"}, 2.5));
 
 
 
 
+    //暂时不考虑所有的高效公式以及高级公式
+    //等离子精炼先跳过
 }
 
 #endif // ITEM_H
