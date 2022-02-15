@@ -14,3 +14,10 @@ Widget::~Widget()
 {
     delete ui;
 }
+
+void Widget::Start()
+{
+    mpMaid = std::make_shared<Maid>();
+    mpMaid->Init();
+    return;
+}

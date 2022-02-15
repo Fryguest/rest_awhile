@@ -2,6 +2,8 @@
 #define WIDGET_H
 
 #include <QWidget>
+#include <memory>
+#include "Maid.h"
 
 namespace Ui {
 class Widget;
@@ -17,6 +19,14 @@ public:
 
 private:
     Ui::Widget *ui;
+
+
+
+public:
+    void Start();
+
+private:
+    std::shared_ptr<Maid> mpMaid;
 };
 
 #endif // WIDGET_H
