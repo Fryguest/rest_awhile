@@ -3,6 +3,9 @@
 
 #include <QWidget>
 #include <memory>
+#include <QLineEdit>
+#include <QLabel>
+#include <QPushButton>
 #include "Maid.h"
 
 namespace Ui {
@@ -20,13 +23,18 @@ public:
 private:
     Ui::Widget *ui;
 
-
-
 public:
-    void Start();
+    void Init();
+    void InitRequestList();
+    void AddInputLineEdit();
+    void ShowInputLineEdit();
+    void Cal();
 
 private:
+    std::vector<std::pair<std::shared_ptr<QLineEdit>,std::shared_ptr<QLineEdit>>> requestInputList;
     std::shared_ptr<Maid> mpMaid;
+    std::shared_ptr<QPushButton> mpStartCalButton;
+    std::shared_ptr<QLabel> mpResultLabel;
 };
 
 #endif // WIDGET_H
