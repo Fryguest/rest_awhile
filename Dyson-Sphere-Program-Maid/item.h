@@ -19,7 +19,13 @@ struct Item
     {
         name=_name;
     }
+    friend operator<(Item a, Item b)
+    {
+        return a.name < b.name;
+    }
     Formula formula;
 };
+
+typedef std::pair<Item, double> ItemWithNum;
 
 #endif // ITEM_H
