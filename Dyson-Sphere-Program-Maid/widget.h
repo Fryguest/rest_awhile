@@ -6,6 +6,7 @@
 #include <QLineEdit>
 #include <QLabel>
 #include <QPushButton>
+#include <QStringList>
 #include "Maid.h"
 
 namespace Ui {
@@ -24,17 +25,20 @@ private:
     Ui::Widget *ui;
 
 public:
+    void ShowResult(const std::vector<ItemWithNum>&);
     void Init();
     void InitRequestList();
     void AddInputLineEdit();
-    void ShowInputLineEdit();
+    void SetLayout();
     void Cal();
 
 private:
     std::vector<std::pair<std::shared_ptr<QLineEdit>,std::shared_ptr<QLineEdit>>> requestInputList;
     std::shared_ptr<Maid> mpMaid;
-    std::shared_ptr<QPushButton> mpStartCalButton;
+    std::shared_ptr<QPushButton> mpStartCalButton; //按钮：开始计算
     std::shared_ptr<QLabel> mpResultLabel;
+    std::shared_ptr<QPushButton> mpAddProductionButton; //按钮： 添加一行最终产物
+    std::shared_ptr<QStringList> mpItemNameList; //输入框自动补全
 };
 
 #endif // WIDGET_H
