@@ -19,14 +19,13 @@ public:
     void InitItem();
     void CheckInit();
     bool FindItem(const std::string&, std::shared_ptr<Item>&);
+    std::vector<std::string> GetItemNameList();
     std::vector<ItemWithNum> CalcRequest(const std::vector<ItemWithNum>&);
 
 private:
     std::vector<Item> itemVec;
     std::vector<Formula> formulaVec;
-    std::map<std::string, Item> itemMap;
-
-
+    std::map<std::string, std::shared_ptr<Item>> itemMap;
 
 };
 

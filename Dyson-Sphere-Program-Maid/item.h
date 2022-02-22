@@ -4,6 +4,7 @@
 #include<string>
 #include<vector>
 #include<map>
+#include<memory>
 
 struct Item
 {
@@ -26,6 +27,7 @@ struct Item
     Formula formula;
 };
 
-typedef std::pair<Item, double> ItemWithNum;
+typedef std::shared_ptr<Item> ItemPtr;
+typedef std::pair<ItemPtr, double> ItemWithNum;
 
 #endif // ITEM_H

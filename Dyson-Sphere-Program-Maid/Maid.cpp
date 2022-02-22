@@ -33,6 +33,7 @@ void Maid::InitItem()
     itemVec.emplace_back("精炼油");
 
     // 二级材料
+    itemVec.emplace_back("氢");
     itemVec.emplace_back("磁线圈");
     itemVec.emplace_back("晶格硅");
     itemVec.emplace_back("钛合金");
@@ -78,7 +79,7 @@ void Maid::InitItem()
 
     for (int i = 0; i < itemVec.size();i++)
     {
-        itemMap.insert({itemVec[i].name, Item(i, itemVec[i].name)});
+        itemMap.insert({itemVec[i].name, make_shared<Item>(i, itemVec[i].name)});
     }
     return;
 }
@@ -140,7 +141,7 @@ void Maid::InitFormula()
 
     for (Formula formula : formulaVec)
     {
-        itemMap.at(formula.production).formula = formula;
+        itemMap.at(formula.production)->formula = formula;
     }
     //暂时不考虑所有的高效公式以及高级公式
     //等离子精炼先跳过
@@ -150,7 +151,7 @@ void Maid::CheckInit()
     for (auto entry : itemMap)
     {
         cout<<entry.first<<" ";
-        for (auto material : entry.second.formula.materialList)
+        for (auto material : entry.second->formula.materialList)
         {
             cout<<material<<" ";
         }
@@ -173,11 +174,11 @@ vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
         vector<ItemWithNum> subItem;
         for (ItemWithNum it : needFormula)
         {
-            if (it.first.formula.needFormula)
+            if (it.first->formula.needFormula)
             {
-                for (string item : it.first.formula.materialList)
+                for (string item : it.first->formula.materialList)
                 {
-                    ItemWithNum sub = {itemMap.at(item), it.second / it.first.formula.productNum};
+                    ItemWithNum sub = {itemMap.at(item), it.second / it.first->formula.productNum};
                     subItem.emplace_back(sub);
                     result.emplace_back(sub);
                 }
@@ -189,7 +190,7 @@ vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
     {
         for (int j = 0; j < i; j++)
         {
-            if (result[i].first.name == result[j].first.name)
+            if (result[i].first->name == result[j].first->name)
             {
                 result[j].second += result[i].second;
                 result.erase(result.begin() + i);
@@ -204,8 +205,18 @@ vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
 bool Maid::FindItem(const string& name, shared_ptr<Item>& pItem)
 {
     if (itemMap.find(name) == itemMap.end()) return false;
-    pItem = make_shared<Item>(itemMap.at(name));
+    pItem = itemMap.at(name);
     return true;
+}
+
+vector<string> Maid::GetItemNameList()
+{
+    vector<string> itemNameList;
+    for (Item item : itemVec)
+    {
+        itemNameList.emplace_back(item.name);
+    }
+    return itemNameList;
 }
 
 int Maid::Init()
