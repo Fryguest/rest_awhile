@@ -7,6 +7,7 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QStringList>
+#include <QScrollArea>
 #include "Maid.h"
 
 namespace Ui {
@@ -39,6 +40,7 @@ private:
     std::shared_ptr<QLabel> mpResultLabel;
     std::shared_ptr<QPushButton> mpAddProductionButton; //按钮： 添加一行最终产物
     std::shared_ptr<QStringList> mpItemNameList; //输入框自动补全
+    std::shared_ptr<QScrollArea> mpQScrollArea;
 };
 
 #endif // WIDGET_H

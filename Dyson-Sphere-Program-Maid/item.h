@@ -23,16 +23,24 @@ public:
     {
         production.first = itemMap.at(input.at("名称"));
         production.second = std::stoi(input.at("产量"));
-        exProduction.first = itemMap.at(input.at("副产物名称"));
-        exProduction.second = std::stoi(input.at("副产物产量"));
+        if (input.at("副产物名称") != "")
+        {
+            exProduction.first = itemMap.at(input.at("副产物名称"));
+            exProduction.second = std::stoi(input.at("副产物数量"));
+        }
+        else
+        {
+            exProduction.first = nullptr;
+            exProduction.second = 0;
+        }
         place = input.at("配方场所");
         timeCost = std::stod(input.at("配方耗时"));
         materialList.clear();
         for (int i=1;i<=6;i++)
         {
             std::string materialName = input.at("材料" + std::to_string(i));
-            int materialNum = std::stoi(input.at("数量" + std::to_string(i)));
             if (itemMap.find(materialName) == itemMap.end()) break;
+            int materialNum = std::stoi(input.at("数量" + std::to_string(i)));
             materialList.emplace_back(itemMap.at(materialName), materialNum);
         }
     }
