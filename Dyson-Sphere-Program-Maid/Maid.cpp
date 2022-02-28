@@ -1,6 +1,7 @@
 #include "Maid.h"
 #include "util/CSVHelper.h"
 #include <queue>
+#include <iostream>
 using namespace std;
 
 vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
@@ -11,13 +12,15 @@ vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
     while (!q.empty())
     {
         ItemWithNum item = q.front(); q.pop();
+        cout<<item.first->name << " " << item.second<<endl;
+
         result.emplace_back(item);
         if (item.first->level > 0)
         {
             auto pFormula = item.first->pFormula;
             for (ItemWithNum material : pFormula->materialList)
             {
-                q.emplace(material.first, material.second / pFormula->production.second);
+                q.emplace(material.first, item.second * material.second / pFormula->production.second);
             }
         }
     }
@@ -56,7 +59,8 @@ vector<string> Maid::GetItemNameList()
 
 int Maid::Init()
 {
-    CSVContent content = CSVHelper::LoadFromDisk("Item.csv");
+    CSVContent content = CSVHelper::LoadFromDisk("./Item.csv");
+    cout<<content.size()<<endl;
     for (auto line : content)
     {
         itemMap[line.at("名称")] = make_shared<Item>(line.at("名称"));

@@ -29,7 +29,8 @@ void Widget::SetLayout()
     }
 
     mpStartCalButton->move(100, (requestInputList.size() + 1) * 50);
-    mpResultLabel->move(500, 50);
+    mpQScrollArea->move(500, 50);
+    mpQScrollArea->resize(400,400);
     mpAddProductionButton->move(100, requestInputList.size() * 50 + 25);
 }
 
@@ -69,11 +70,12 @@ void Widget::ShowResult(const vector<ItemWithNum>& resultList)
     {
         ostringstream sout;
         sout<<left<<setw(20)<< p.first->name<<right<<setw(20)<<p.second;
-        cout<<sout.str()<<endl;
         result+=sout.str()+"\n";
     }
     mpResultLabel->setText(QString::fromStdString(result));
     mpResultLabel->show();
+
+    mpQScrollArea->setWidget(mpResultLabel.get());
     return;
 }
 
@@ -102,6 +104,8 @@ void Widget::Init()
 
     mpResultLabel = make_shared<QLabel>(this);
     mpResultLabel->hide();
+
+    mpQScrollArea = make_shared<QScrollArea>(this);
 
     mpAddProductionButton = make_shared<QPushButton>("添加产物", this);
     QObject::connect(mpAddProductionButton.get(), &QPushButton::clicked, this, &Widget::AddInputLineEdit);
