@@ -1,20 +1,17 @@
 #ifndef MAID_H
 #define MAID_H
 
-
 #include <vector>
 #include <map>
+#include <string>
 #include <memory>
 #include "Item.h"
-#include "Formula.h"
+
 class Maid
 {
+
 public:
     int Init();
-    Maid();
-
-public:
-
     void InitFormula();
     void InitItem();
     void CheckInit();
@@ -23,8 +20,6 @@ public:
     std::vector<ItemWithNum> CalcRequest(const std::vector<ItemWithNum>&);
 
 private:
-    std::vector<Item> itemVec;
-    std::vector<Formula> formulaVec;
     std::map<std::string, std::shared_ptr<Item>> itemMap;
 
 };
