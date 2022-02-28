@@ -26,16 +26,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         widget.cpp \
-    Maid.cpp
+    Maid.cpp \
+    util/CSVHelper.cpp
 
 HEADERS += \
-        widget.h \
-    Formula.h \
     Item.h \
-    Maid.h
+    Maid.h \
+    widget.h \
+    widget.h \
+    util/CSVHelper.h
 
 FORMS += \
         widget.ui
 
 DISTFILES += \
-    README.md
+    README.md \
+    Item.csv

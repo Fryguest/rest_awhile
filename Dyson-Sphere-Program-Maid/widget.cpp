@@ -1,6 +1,5 @@
 #include "widget.h"
 #include "ui_widget.h"
-#include "Formula.h"
 #include "Item.h"
 #include <QObject>
 #include <QCompleter>
@@ -25,13 +24,13 @@ void Widget::SetLayout()
 {
     for (int i = 1; i <= requestInputList.size(); i++)
     {
-        requestInputList[i - 1].first->move(100, i * 100);
-        requestInputList[i - 1].second->move(300, i * 100);
+        requestInputList[i - 1].first->move(100, i * 50);
+        requestInputList[i - 1].second->move(300, i * 50);
     }
 
-    mpStartCalButton->move(100, (requestInputList.size() + 1) * 100);
-    mpResultLabel->move(100, (requestInputList.size() + 2) * 100);
-    mpAddProductionButton->move(100, requestInputList.size() * 100 + 50);
+    mpStartCalButton->move(100, (requestInputList.size() + 1) * 50);
+    mpResultLabel->move(500, 50);
+    mpAddProductionButton->move(100, requestInputList.size() * 50 + 25);
 }
 
 void Widget::AddInputLineEdit()
@@ -69,7 +68,7 @@ void Widget::ShowResult(const vector<ItemWithNum>& resultList)
     for (auto p : resultList)
     {
         ostringstream sout;
-        sout<<left<<p.first->name<<right<<setw(20 - p.first->name.length())<<p.second;
+        sout<<left<<setw(20)<< p.first->name<<right<<setw(20)<<p.second;
         cout<<sout.str()<<endl;
         result+=sout.str()+"\n";
     }
