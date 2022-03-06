@@ -12,7 +12,6 @@ vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
     while (!q.empty())
     {
         ItemWithNum item = q.front(); q.pop();
-        cout<<item.first->name << " " << item.second<<endl;
 
         result.emplace_back(item);
         if (item.first->level > 0)
