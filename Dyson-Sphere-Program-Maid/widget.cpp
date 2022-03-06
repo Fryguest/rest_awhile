@@ -30,7 +30,8 @@ void Widget::SetLayout()
     }
 
     mpStartCalButton->move(100, (requestInputList.size() + 1) * 50);
-    mpAddProductionButton->move(100, requestInputList.size() * 50 + 25);
+    mpAddProductionButton->move(100, (requestInputList.size() + 1) * 50 + 25);
+    mpSwitchFormulaButton->move(100, (requestInputList.size() +1 ) * 50 + 50);
 
 
 }
@@ -79,7 +80,9 @@ void Widget::ShowResult(const vector<ItemWithNum>& resultList)
     for (auto result : resultList)
     {
         QLabel* pName = new QLabel(this);
+        pName->setMinimumHeight(15);
         QLabel* pNum = new QLabel(this);
+        pNum->setMinimumHeight(15);
         pName->setText(QString::fromStdString(result.first->name));
         {
             ostringstream sout;
@@ -101,7 +104,7 @@ void Widget::ShowResult(const vector<ItemWithNum>& resultList)
     }
     for (int i = 0;i<3;i++)
     {
-        mpQScrollAreaVec[i]->widget()->resize(220, mpResultLayout[i]->count() * 10);
+        mpQScrollAreaVec[i]->widget()->resize(220, mpResultLayout[i]->count() * 10 + 10);
     }
 
 
@@ -120,6 +123,13 @@ void Widget::Cal()
             requestList.emplace_back(pItem, num);
     }
     this->ShowResult(mpMaid->CalcRequest(requestList));
+    return;
+}
+
+void Widget::SwitchFormula()
+{
+    mpMaid->SwitchFormula();
+    Cal();
     return;
 }
 
@@ -156,6 +166,9 @@ void Widget::Init()
 
     mpAddProductionButton = make_shared<QPushButton>("添加产物", this);
     QObject::connect(mpAddProductionButton.get(), &QPushButton::clicked, this, &Widget::AddInputLineEdit);
+
+    mpSwitchFormulaButton = make_shared<QPushButton>("切换高/低级公式",this);
+    QObject::connect(mpSwitchFormulaButton.get(), &QPushButton::clicked, this, &Widget::SwitchFormula);
 
     InitRequestList();
     return;

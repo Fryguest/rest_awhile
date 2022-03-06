@@ -18,9 +18,11 @@ public:
     bool FindItem(const std::string&, std::shared_ptr<Item>&);
     std::vector<std::string> GetItemNameList();
     std::vector<ItemWithNum> CalcRequest(const std::vector<ItemWithNum>&);
+    void SwitchFormula();
 
 private:
     std::map<std::string, std::shared_ptr<Item>> itemMap;
+    bool useAdvancedFormula;
 
 };
 
