@@ -33,6 +33,12 @@ void Widget::SetLayout()
     mpAddProductionButton->move(100, (requestInputList.size() + 1) * 50 + 25);
     mpSwitchFormulaButton->move(100, (requestInputList.size() +1 ) * 50 + 50);
 
+    for (unsigned i = 1; i <= outsourceInputList.size(); i++)
+    {
+        outsourceInputList[i - 1]->move(100, i * 50 + requestInputList.size() * 50 + 100);
+    }
+
+    mpAddOutsourceButton->move(100, (outsourceInputList.size() + 1) * 50 + (requestInputList.size() + 1) * 50 + 25);
 
 }
 
@@ -51,6 +57,16 @@ void Widget::AddInputLineEdit()
     return;
 }
 
+void Widget::AddOutsourceLineEdit()
+{
+    shared_ptr<QLineEdit> pItem = make_shared<QLineEdit>(this);
+    pItem->setPlaceholderText("外部输入产物");
+    pItem->show();
+    pItem->setCompleter(new QCompleter(*mpItemNameList));
+    outsourceInputList.emplace_back(pItem);
+    SetLayout();
+}
+
 void Widget::InitRequestList()
 {
     mpItemNameList = make_shared<QStringList>();
@@ -61,7 +77,9 @@ void Widget::InitRequestList()
     }
 
     requestInputList.clear();
+    outsourceInputList.clear();
     this->AddInputLineEdit();
+    this->AddOutsourceLineEdit();
     return;
 }
 
@@ -79,6 +97,7 @@ void Widget::ShowResult(const vector<ItemWithNum>& resultList)
 
     for (auto result : resultList)
     {
+        if (result.first->level >2) continue;
         QLabel* pName = new QLabel(this);
         pName->setMinimumHeight(15);
         QLabel* pNum = new QLabel(this);
@@ -113,6 +132,11 @@ void Widget::ShowResult(const vector<ItemWithNum>& resultList)
 
 void Widget::Cal()
 {
+    set<string> outsource;
+    for (auto o : outsourceInputList)
+    {
+        outsource.insert(o->text().toStdString());
+    }
     vector<ItemWithNum> requestList;
     for (auto request : requestInputList)
     {
@@ -122,7 +146,14 @@ void Widget::Cal()
         if (mpMaid->FindItem(name, pItem))
             requestList.emplace_back(pItem, num);
     }
-    this->ShowResult(mpMaid->CalcRequest(requestList));
+    if (requestList.size())
+    {
+        this->ShowResult(mpMaid->CalcRequest(requestList, outsource));
+    }
+    else
+    {
+        this->ShowResult(mpMaid->RequestAllBuilding(outsource));
+    }
     return;
 }
 
@@ -166,6 +197,9 @@ void Widget::Init()
 
     mpAddProductionButton = make_shared<QPushButton>("添加产物", this);
     QObject::connect(mpAddProductionButton.get(), &QPushButton::clicked, this, &Widget::AddInputLineEdit);
+
+    mpAddOutsourceButton = make_shared<QPushButton>("添加外部输入产物", this);
+    QObject::connect(mpAddOutsourceButton.get(), &QPushButton::clicked, this, &Widget::AddOutsourceLineEdit);
 
     mpSwitchFormulaButton = make_shared<QPushButton>("切换高/低级公式",this);
     QObject::connect(mpSwitchFormulaButton.get(), &QPushButton::clicked, this, &Widget::SwitchFormula);
