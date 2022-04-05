@@ -4,7 +4,21 @@
 #include <iostream>
 using namespace std;
 
-vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
+vector<ItemWithNum> Maid::RequestAllBuilding(const set<string>& outsource)
+{
+    vector<ItemWithNum> requestList;
+    for (auto o : itemMap)
+    {
+        if (o.second->level == 3)
+        {
+            auto& pFormula = o.second->pFormula;
+            requestList.emplace_back(o.second, pFormula->production.second * 60 * 1.5 / pFormula -> timeCost);
+        }
+    }
+    return CalcRequest(requestList, outsource);
+}
+
+vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList, const set<string>& outsource)
 {
     vector<ItemWithNum> result;
     queue<ItemWithNum> q;
@@ -12,13 +26,15 @@ vector<ItemWithNum> Maid::CalcRequest(const vector<ItemWithNum>& requestList)
     while (!q.empty())
     {
         ItemWithNum item = q.front(); q.pop();
-
+        if (outsource.find(item.first->name) != outsource.end()) continue;
         result.emplace_back(item);
         if (item.first->level > 0)
         {
             auto pFormula = item.first->pFormula;
             for (ItemWithNum material : pFormula->materialList)
             {
+                cout<<item.second << " " << material.second << " " << pFormula->production.second<<endl;
+                cout<<item.second * material.second / pFormula->production.second<<endl;
                 q.emplace(material.first, item.second * material.second / pFormula->production.second);
             }
         }
@@ -67,6 +83,7 @@ void Maid::SwitchFormula()
             pFormula->place = "熔炉";
             pFormula->timeCost = 1.5;
             itemMap.at("晶格硅")->pFormula = pFormula;
+            itemMap.at("晶格硅")->level = 1;
         }
 
         {
@@ -109,6 +126,28 @@ void Maid::SwitchFormula()
         }
 
         {
+            shared_ptr<Formula> pFormula = make_shared<Formula>();
+            pFormula->production = make_pair(itemMap.at("卡西米尔晶体"), 1);
+            pFormula->materialList.emplace_back(itemMap.at("光栅石"), 4);
+            pFormula->materialList.emplace_back(itemMap.at("石墨烯"), 2);
+            pFormula->materialList.emplace_back(itemMap.at("氢"), 12);
+            pFormula->place = "制造台";
+            pFormula->timeCost = 4;
+            itemMap.at("卡西米尔晶体")->pFormula = pFormula;
+        }
+
+        {
+            shared_ptr<Formula> pFormula = make_shared<Formula>();
+            pFormula->production = make_pair(itemMap.at("粒子容器"), 1);
+            pFormula->materialList.emplace_back(itemMap.at("单极磁石"), 10);
+            pFormula->materialList.emplace_back(itemMap.at("铜块"), 2);
+            pFormula->place = "制造台";
+            pFormula->timeCost = 4;
+            itemMap.at("粒子容器")->pFormula = pFormula;
+        }
+
+
+        {
             itemMap.at("有机晶体")->level = 0;
             itemMap.at("有机晶体")->pFormula = nullptr;
         }
@@ -116,6 +155,11 @@ void Maid::SwitchFormula()
         {
             itemMap.at("硫酸")->level = 0;
             itemMap.at("硫酸")->pFormula = nullptr;
+        }
+
+        {
+            itemMap.at("重氢")->level = 0;
+            itemMap.at("重氢")->pFormula = nullptr;
         }
         useAdvancedFormula = true;
 
@@ -131,7 +175,7 @@ void Maid::SwitchFormula()
 int Maid::Init()
 {
     CSVContent content = CSVHelper::LoadFromDisk("./Item.csv");
-    cout<<content.size()<<endl;
+    //cout<<content.size()<<endl;
     for (auto line : content)
     {
         itemMap[line.at("名称")] = make_shared<Item>(line.at("名称"));
