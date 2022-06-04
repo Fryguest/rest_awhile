@@ -99,26 +99,39 @@ void Widget::ShowResult(const vector<ItemWithNum>& resultList)
     {
         if (result.first->level >2) continue;
         QLabel* pName = new QLabel(this);
-        pName->setMinimumHeight(15);
         QLabel* pNum = new QLabel(this);
-        pNum->setMinimumHeight(15);
-        pName->setText(QString::fromStdString(result.first->name));
+        QLabel* pWorkstation = new QLabel(this);
+        {
+            pName->setText(QString::fromStdString(result.first->name));
+            pName->setMinimumHeight(15);
+        }
         {
             ostringstream sout;
             sout<<result.second;
             pNum->setText(QString::fromStdString(sout.str()));
+            pNum->setMinimumHeight(15);
+        }
+        if (result.first->level)
+        {
+            ostringstream sout;
+            sout<<mpMaid->CalcWorkstationRequest(result);
+            pWorkstation->setText(QString::fromStdString(sout.str()));
+            pWorkstation->setMinimumHeight(15);
         }
         if (result.first->level >= 2)
         {
             int num = mpResultLayout[2]->count()/2;
             mpResultLayout[2]->addWidget(pName, num, 0);
             mpResultLayout[2]->addWidget(pNum, num, 1);
+            mpResultLayout[2]->addWidget(pWorkstation, num, 2);
         }
         else
         {
             int num = mpResultLayout[result.first->level]->count()/2;
             mpResultLayout[result.first->level]->addWidget(pName, num, 0);
             mpResultLayout[result.first->level]->addWidget(pNum, num, 1);
+            if (result.first->level)
+            mpResultLayout[result.first->level]->addWidget(pWorkstation, num, 2);
         }
     }
     for (int i = 0;i<3;i++)
@@ -164,6 +177,11 @@ void Widget::SwitchFormula()
     return;
 }
 
+void Widget::IncreaseProductionReagentStatusUpdate()
+{
+    mpMaid->setIncreaseProductionReagentlevel(mpQIncreaseProductionReagentSelector->checkedId());
+}
+
 void Widget::Init()
 {
     mpMaid = std::make_shared<Maid>();
@@ -174,10 +192,13 @@ void Widget::Init()
 
     mpResultLayout.resize(3);
     mpQScrollAreaVec.resize(3);
-    for (int i = 0; i< 3;i++)
+    for (int i = 0; i < 3; i++)
     {
         mpQScrollAreaVec[i] = make_shared<QScrollArea>(this);
+        mpQScrollAreaVec[i]->resize(440, 800);
+        mpQScrollAreaVec[i]->move(500+(2-i)*450, 50);
         QLabel* pWidget = new QLabel(this);
+        pWidget->setFixedWidth(400);
         mpResultLayout[i] = make_shared<QGridLayout>(pWidget);
         mpResultLayout[i]->setSpacing(0);
 
@@ -185,15 +206,6 @@ void Widget::Init()
         mpQScrollAreaVec[i]->setWidget(pWidget);
         mpQScrollAreaVec[i]->show();
     }
-
-    mpQScrollAreaVec[2]->move(500, 50);
-    mpQScrollAreaVec[2]->resize(250,400);
-
-    mpQScrollAreaVec[1]->move(800, 50);
-    mpQScrollAreaVec[1]->resize(250,400);
-
-    mpQScrollAreaVec[0]->move(1100, 50);
-    mpQScrollAreaVec[0]->resize(250,400);
 
     mpAddProductionButton = make_shared<QPushButton>("添加产物", this);
     QObject::connect(mpAddProductionButton.get(), &QPushButton::clicked, this, &Widget::AddInputLineEdit);
@@ -203,6 +215,27 @@ void Widget::Init()
 
     mpSwitchFormulaButton = make_shared<QPushButton>("切换高/低级公式",this);
     QObject::connect(mpSwitchFormulaButton.get(), &QPushButton::clicked, this, &Widget::SwitchFormula);
+
+    //{
+    //    mpQIncreaseProductionReagentSelector = make_shared<QButtonGroup>(this);
+    //    mpQIncreaseProductionReagent0 = make_shared<QRadioButton>("不使用增产剂",this);
+    //    mpQIncreaseProductionReagent1 = make_shared<QRadioButton>("一级增产剂",this);
+    //    mpQIncreaseProductionReagent2 = make_shared<QRadioButton>("二级增产剂",this);
+    //    mpQIncreaseProductionReagent3 = make_shared<QRadioButton>("三级增产剂",this);
+    //    mpQIncreaseProductionReagentSelector->addButton(mpQIncreaseProductionReagent0.get(), 0);
+    //    mpQIncreaseProductionReagentSelector->addButton(mpQIncreaseProductionReagent1.get(), 1);
+    //    mpQIncreaseProductionReagentSelector->addButton(mpQIncreaseProductionReagent2.get(), 2);
+    //    mpQIncreaseProductionReagentSelector->addButton(mpQIncreaseProductionReagent3.get(), 3);
+    //    mpQIncreaseProductionReagent0->setChecked(true);
+    //    mpQIncreaseProductionReagent0->move(1700,50);
+    //    mpQIncreaseProductionReagent1->move(1700,100);
+    //    mpQIncreaseProductionReagent2->move(1700,150);
+    //    mpQIncreaseProductionReagent3->move(1700,200);
+    //    QObject::connect(mpQIncreaseProductionReagent0.get(), &QRadioButton::clicked, this, &Widget::IncreaseProductionReagentStatusUpdate);
+    //    QObject::connect(mpQIncreaseProductionReagent0.get(), &QRadioButton::clicked, this, &Widget::IncreaseProductionReagentStatusUpdate);
+    //    QObject::connect(mpQIncreaseProductionReagent0.get(), &QRadioButton::clicked, this, &Widget::IncreaseProductionReagentStatusUpdate);
+    //    QObject::connect(mpQIncreaseProductionReagent0.get(), &QRadioButton::clicked, this, &Widget::IncreaseProductionReagentStatusUpdate);
+    //}
 
     InitRequestList();
     return;
