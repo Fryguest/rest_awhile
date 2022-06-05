@@ -1,0 +1,39 @@
+{
+    "weapon":[
+        {
+            "type": "短杖",
+            "name": "神秘冥界幽灵短杖",
+            "intelligence": 100,
+            "lucky": 100,
+            "attack": 206,
+            "magicAttack": 347,
+            "bossDamage": 30,
+            "ignoreDefense" : 20,
+            "enhanceLimit" : 8
+        },
+        {
+            "type": "长杖",
+            "name": "神秘冥界幽灵长杖",
+            "intelligence": 100,
+            "lucky": 100,
+            "attack": 218,
+            "magicAttack": 353,
+            "bossDamage": 30,
+            "ignoreDefense" : 20,
+            "enhanceLimit" : 8
+        }
+    ],
+    "hat":[
+        {
+            "type": "帽子",
+            "name": "神秘冥界幽灵法师帽",
+            "intelligence": 100,
+            "lucky": 100,
+            "attack": 218,
+            "magicAttack": 353,
+            "bossDamage": 30,
+            "ignoreDefense" : 20,
+            "enhanceLimit" : 8
+        }
+    ]
+}
