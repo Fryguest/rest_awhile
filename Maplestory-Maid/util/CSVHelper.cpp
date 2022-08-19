@@ -6,7 +6,7 @@ vector<string> CSVHelper::LineToVec(const std::string& str)
 {
     vector<string> result;
     string temp="";
-    for (int i =0;i<str.length();i++)
+    for (size_t i =0;i<str.length();i++)
     {
         if (str[i] != ',') temp+=str[i];
         else
@@ -24,7 +24,7 @@ map<string, string> CSVHelper::LineToMap(const string& str, const vector<string>
     map<string, string> result;
     int cnt = 0;
     string temp="";
-    for (int i =0;i<str.length();i++)
+    for (size_t i =0;i<str.length();i++)
     {
         if (str[i] != ',') temp+=str[i];
         else

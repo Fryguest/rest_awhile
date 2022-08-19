@@ -1,13 +1,6 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
-
-enum Job
-{
-    主教,
-    大魔导师（火，毒）,
-    大魔导师（冰，雷）
-};
-
+#include "Job.h"
 
 class Character
 {
@@ -40,7 +33,10 @@ class Character
     int finalDamage;
     int ignoreDefense;
 
-    Equipment equipment;
+    //EquipmentSet equipmentSet;
+    //Legion legion;
+    //Link link;
+    //JobBase jobBase;
 
     void updateAttribute();
 };

@@ -1,6 +1,9 @@
 #ifndef JOB_H
 #define JOB_H
 
+#include<string>
+#include<map>
+
 enum Job
 {
     // 冒险家
@@ -71,7 +74,74 @@ enum Job
     Jett, //杰特
     MoXuan //墨玄
 };
+const std::map<std::string, Job> JobNameMap = {
+    // 冒险家
+    {"英雄",Hero},
+    {"圣骑士", Paladin},
+    {"黑骑士", DarkKnight},
+    {"主教", Bishop},
+    {"大魔导师(火,毒)", ArchMage_Fire_Poison},
+    {"大魔导师(冰,雷)", ArchMage_Ice_Lightning},
+    {"箭神", BowMaster},
+    {"神射手", Marksman},
+    {"开拓者", PathFinder},
+    {"暗影神偷", Shadower},
+    {"夜使者", NightLord},
+    {"影武者", BladeMaster},
+    {"拳霸", Buccaneer},
+    {"枪神", Corsair},
+    {"重炮指挥官", CannonMaster},
 
+    //六英雄
+    {"狂狼勇士", Aran},
+    {"龙魔导士", Evan},
+    {"精灵游侠", Mercedes},
+    {"幻影侠盗", Phantom},
+    {"夜光", Luminous},
+    {"隐月", Shade},
 
+    //西格诺斯骑士团
+    {"米哈逸", Mihile},
+    {"圣魂剑士", DawnWarrior},
+    {"烈焰巫师", BlazeWizard},
+    {"破风使者", WindArcher},
+    {"暗夜行者", NightWalker},
+    {"闪雷悍将", ThunderBreaker},
+
+    //末日反抗军
+    {"恶魔杀手", DemonSlayer},
+    {"恶魔复仇者", DemonAvenger},
+    {"爆拳枪神", Blaster},
+    {"炼狱巫师", BattleMage},
+    {"狂豹猎人", WildHunter},
+    {"机甲战神", Mechanic},
+    {"杰诺", Xenon},
+
+    //超新星
+    {"凯撒", Kaiser},
+    {"卡蒂娜", Cadena},
+    {"天使破坏者", AngelicBuster},
+    {"凯殷", Kain},
+
+    //雷普
+    {"阿黛尔", Adele},
+    {"亚克", Ark},
+    {"伊利恩", Illium},
+
+    //阿尼玛
+    {"虎影", Hoyoung},
+    {"菈菈", Lara},
+
+    //其他
+    {"神之子", Zero},
+    {"凯内西斯", Kinesis},
+
+    //海外职业
+    {"阴阳师", Kanna},
+    {"剑豪", Hayato},
+    {"幻兽师", BeastTamer},
+    {"杰特", Jett},
+    {"墨玄", MoXuan}
+};
 
 #endif // JOB_H

@@ -26,16 +26,20 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += \
         main.cpp \
         MainWindow.cpp \
-    Character.cpp
+    Character.cpp \
+    util/CSVHelper.cpp
 
 HEADERS += \
         MainWindow.h \
     Character.h \
-    Equipment.h
+    Equipment.h \
+    util/CSVHelper.h \
+    Job.h
 
 FORMS += \
         MainWindow.ui
 
 DISTFILES += \
     people.json \
-    EquipmentBase.json
+    EquipmentBase.json \
+    Data/Weapon.csv

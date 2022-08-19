@@ -40,7 +40,6 @@ class Equipment
     int additionPotential;
     std::vector<EnhanceScroll> enhanceScrollList;
     int calStarForceIntelligence();
-
 };
 
 class EquipmentSet
