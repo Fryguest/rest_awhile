@@ -42,4 +42,5 @@ FORMS += \
 DISTFILES += \
     people.json \
     EquipmentBase.json \
-    Data/Weapon.csv
+    Data/Weapon.csv \
+    Data/Job.csv
