@@ -27,9 +27,16 @@ double Maid::CalcWorkstationRequest(const ItemWithNum& request)
     if (pFormula->place == "制造台") temp = 1.5;
     else if (pFormula->place == "科研设备") temp = 1;
     else if (pFormula->place == "冶炼设备") temp = 2;
-    else if (pFormula->place == "化工设备") temp = 1;
+    else if (pFormula->place == "化工设备") temp = 2;
     else if (pFormula->place == "粒子对撞机") temp = 1;
     else if (pFormula->place == "精炼设备") temp = 1;
+
+//    if (pFormula->place == "制造台") temp = 0.75;
+//    else if (pFormula->place == "科研设备") temp = 1;
+//    else if (pFormula->place == "冶炼设备") temp = 1;
+//    else if (pFormula->place == "化工设备") temp = 1;
+//    else if (pFormula->place == "粒子对撞机") temp = 1;
+//    else if (pFormula->place == "精炼设备") temp = 1;
 
     return request.second * pFormula->timeCost / (60 * pFormula->productionSpeedup * temp * pFormula->production.second * pFormula->productionBoost);
 }
@@ -94,7 +101,7 @@ void Maid::SwitchFormula()
             shared_ptr<Formula> pFormula = make_shared<Formula>();
             pFormula->production = make_pair(itemMap.at("晶格硅"), 2);
             pFormula->materialList.emplace_back(itemMap.at("分形硅石"), 1);
-            pFormula->place = "冶炼设备";
+            pFormula->place = "制造台";
             pFormula->timeCost = 1.5;
             itemMap.at("晶格硅")->pFormula = pFormula;
             itemMap.at("晶格硅")->level = 1;
@@ -123,7 +130,7 @@ void Maid::SwitchFormula()
         {
             shared_ptr<Formula> pFormula = make_shared<Formula>();
             pFormula->production = make_pair(itemMap.at("碳纳米管"), 2);
-            pFormula->materialList.emplace_back(itemMap.at("刺笋结晶"), 2);
+            pFormula->materialList.emplace_back(itemMap.at("刺笋结晶"), 6);
             pFormula->place = "化工厂";
             pFormula->timeCost = 4;
             itemMap.at("碳纳米管")->pFormula = pFormula;
