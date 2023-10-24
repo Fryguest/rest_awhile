@@ -1,0 +1,54 @@
+[size=150%][color=red]武僧[/color][/size]
+
+[collapse=尹娜水人]
+触发寅剑buff的情况下疾风击无冷却, 但是没有寅剑buff的情况下手感很差, 此时需要cdr来维持舒适度
+侍从宝石可以给随从90%的减伤, 建议使用全技能魔女
+[size=130%]装备, 萃取, 宝石[/size]
+[table]
+[tr][td]部位[/td][td]装备[/td][td]词缀[/td][td]备注[/td][/tr]
+[tr][td]头部[/td][td]尹娜的光华[/td][td]暴击, 敏捷, 体能[/td][td][/td][/tr]
+[tr][td]胸部[/td][td]尹娜的寰宇胸襟[/td][td]幻神诀伤害, 敏捷, 体能[/td][td][/td][/tr]
+[tr][td]腿部[/td][td]尹娜的戒律[/td][td]敏捷, 体能, 全抗[/td][td][/td][/tr]
+[tr][td]肩部[/td][td]列斐伏尔的劝诫[/td][td]幻神诀伤害, 敏捷, 体能, cdr[/td][td][/td][/tr]
+[tr][td]手部[/td][td]尹娜的掌控[/td][td]双暴, 敏捷, cdr[/td][td][/td][/tr]
+[tr][td]腰部[/td][td]守护者的剑套[/td][td]敏捷, 体能, 全抗, 百分比生命[/td][td][/td][/tr]
+[tr][td]脚部[/td][td]粗糙至极靴[/td][td]敏捷, 体能, 全抗, 护甲[/td][td]核心装备[/td][/tr]
+[tr][td]手腕[/td][td]守护者的格挡[/td][td]冰元素伤害, 暴击, 敏捷, 体能[/td][td][/td][/tr]
+[tr][td]颈部[/td][td]斯奎特的项链[/td][td]冰元素伤害, 双暴[/td][td][/td][/tr]
+[tr][td]戒指一[/td][td]克己[/td][td]双暴, 伤害[/td][td]没有伤害可用cdr[/td][/tr]
+[tr][td]戒指二[/td][td]守心[/td][td]双暴, 伤害[/td][td]没有伤害可用cdr[/td][/tr]
+[tr][td]双手[/td][td]尹娜的审判[/td][td]百分比伤害, 攻速, cdr[/td][td]武器自带一条幻神诀伤害[/td][/tr]
+[tr][td]武器萃取[/td][td]寅剑[/td][td][/td][td]尽可能找精英来触发寅剑[/td][/tr]
+[tr][td]防具萃取[/td][td]蒙尘者绑腕[/td][td][/td][td][/td][/tr]
+[tr][td]饰品萃取[/td][td]皇家华戒[/td][td][/td][td][/td][/tr]
+[tr][td]传奇宝石一[/td][td]侍从宝石[/td][td][/td][td][/td][/tr]
+[tr][td]传奇宝石二[/td][td]困者之灾[/td][td][/td][td][/td][/tr]
+[tr][td]传奇宝石三[/td][td]强者之灾[/td][td][/td][td][/td][/tr]
+[/table]
+
+[size=130%]主动技能[/size]
+[table]
+[tr][td]技能[/td][td]符文[/td][td]备注[/td][/tr]
+[tr][td]幻神诀[/td][td]水相幻身[/td][td]核心技能[/td][/tr]
+[tr][td]疾风击[/td][td]光辉如炬[/td][td]位移, 触发寅剑buff的情况下可以无冷却[/td][/tr]
+[tr][td]飓风破[/td][td]聚力爆破[/td][td]聚怪, 触发蒙尘者绑腕和列斐伏尔的劝诫的特效, 触发灵光悟的位移[/td][/tr]
+[tr][td]灵光悟[/td][td]流沙覆[/td][td]减伤+位移[/td][/tr]
+[tr][td]百烈拳[/td][td]拳出火势[/td][td]触发对戒增伤[/td][/tr]
+[tr][td]禅定[/td][td]心性超脱[/td][td]免伤[/td][/tr]
+[/table]
+
+[size=130%]被动技能[/size]
+[table]
+[tr][td]技能[/td][td]备注[/td][/tr]
+[tr][td]伊塔之辉[/td][td]cdr[/td][/tr]
+[tr][td]齐心协力[/td][td]可以认为是15%的稳定增伤[/td][/tr]
+[tr][td]无情猛袭[/td][td]增伤[/td][/tr]
+[tr][td]先发制人[/td][td]攻速[/td][/tr]
+[/table]
+
+
+[size=130%]简易手法[/size]
+进门打满10个水人, 然后开幻神诀, 尽量只找精英打维持寅剑buff
+没有寅剑buff时, 灵光悟+飓风破也可以充当位移
+遇见精英和打boss就飓风破+百烈拳
+[/collapse]
