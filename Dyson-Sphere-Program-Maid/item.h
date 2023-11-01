@@ -17,7 +17,8 @@ public:
     std::string place;
     std::vector<ItemWithNum> materialList; //材料列表
     double timeCost; //制作耗时
-    double productionBoost = 1.25;
+    //double productionBoost = 1.25;
+    double productionBoost = 1;
     double productionSpeedup = 1;
 public:
     Formula(){}
