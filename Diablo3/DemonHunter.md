@@ -77,22 +77,22 @@ Switch版本恐惧冰吞存在bug,可能会导致一定程度的丢箭,除了伤
 
 | 部位 | 装备 | 繁体装备 | 词缀 | 备注 |
 | ---- | ---- | ---- | ---- | ---- |
-| 头部 | 守护者的凝视 | 守護者之凝視 | 暴击, 敏捷, 体能 |  |
-| 胸部 | 电镀背心 | 電鍍外衣 | 敏捷, 体能, 全抗/百分比生命 |  |
-| 腿部 | 冷极管长裤 | 低溫陰極長褲 | 追踪箭伤害, 敏捷, 体能 |  |
-| 肩部 | 机械肩铠 | 機械化肩鎧 | 敏捷, 体能, 全抗, cdr/范围伤 |  |
-| 手部 | 气动机械臂甲 | 氣動機械臂鎧 | 双暴, 敏捷, cdr |  |
-| 腰部 | 猎手之怒 | 獵人之怒 | 追踪箭伤害, 敏捷, 体能, 全抗/百分比生命 | 猎手之怒和深渊挖掘裤带一萃一 |
-| 脚部 | 仿古珍品靴 | 老派復古靴 | 敏捷, 体能, 全抗, 护甲 |  |
-| 手腕 | 守护者的格挡 | 守護者之偏折 | 冰元素伤害, 暴击, 敏捷, 体能 |  |
-| 颈部 | 斯奎特的项链 | 阿扭的項鍊 | 冰元素伤害, 双暴 |  |
-| 戒指一 | 克己 | 克己 | 双暴, 范围伤 |  |
-| 戒指二 | 守心 | 致志 | 双暴, 范围伤 |  |
-| 主手 | 杨的反曲弓 | 百分比伤害, 精英伤害, 范围伤, 减耗/cdr | 杨弓自带一条不可洗的高减耗 |
-| 副手 | 希瑞的九号箭袋 | 瑟里九號箭包 | 追踪箭伤害, 暴击, cdr | 箭袋自带一条不可洗的攻速 |
-| 武器萃取 | 黎明 | 黎明 |  |  |
-| 防具萃取 | 深渊挖掘裤 | 深淵挖掘褲 |  | 猎手之怒和深渊挖掘裤带一萃一 |
-| 饰品萃取 | 皇家华戒 | 皇家華戒 |  |  |
+| 头部 | <font color=green>守护者的凝视</font> | <font color=green>守護者之凝視</font> | 暴击, 敏捷, 体能 |  |
+| 胸部 | <font color=green>电镀背心</font> | <font color=green>電鍍外衣</font> | 敏捷, 体能, 全抗/百分比生命 |  |
+| 腿部 | <font color=green>冷极管长裤</font> | <font color=green>低溫陰極長褲</font> | 追踪箭伤害, 敏捷, 体能 |  |
+| 肩部 | <font color=green>机械肩铠</font> | <font color=green>機械化肩鎧</font> | 敏捷, 体能, 全抗, cdr/范围伤 |  |
+| 手部 | <font color=green>气动机械臂甲</font> | <font color=green>氣動機械臂鎧</font> | 双暴, 敏捷, cdr |  |
+| 腰部 | <font color=orange>猎手之怒</font> | <font color=orange>獵人之怒</font> | 追踪箭伤害, 敏捷, 体能, 全抗/百分比生命 | <font color=orange>猎手之怒</font>和<font color=orange>深渊挖掘裤</font>带一萃一 |
+| 脚部 | <font color=green>仿古珍品靴</font> | <font color=green>老派復古靴</font> | 敏捷, 体能, 全抗, 护甲 |  |
+| 手腕 | <font color=green>守护者的格挡</font> | <font color=green>守護者之偏折</font> | 冰元素伤害, 暴击, 敏捷, 体能 |  |
+| 颈部 | <font color=orange>斯奎特的项链</font> | <font color=orange>阿扭的項鍊</font> | 冰元素伤害, 双暴 |  |
+| 戒指一 | <font color=green>克己</font> | <font color=green>克己</font> | 双暴, 范围伤 |  |
+| 戒指二 | <font color=green>守心</font> | <font color=green>致志</font> | 双暴, 范围伤 |  |
+| 主手 | <font color=orange>杨的反曲弓</font> | <font color=orange>楊的反曲弓</font> | 百分比伤害, 精英伤害, 范围伤, 减耗/cdr | 杨弓分类为弓，自带一条不可洗的高减耗 |
+| 副手 | <font color=orange>希瑞的九号箭袋</font> | <font color=orange>瑟里九號箭包</font> | 追踪箭伤害, 暴击, cdr | 分类为箭袋，所有箭袋均自带一条不可洗的攻速 |
+| 武器萃取 | <font color=orange>黎明</font> | <font color=orange>黎明</font> |  |  |
+| 防具萃取 | <font color=orange>深渊挖掘裤</font> | <font color=orange>深淵挖掘褲</font> |  | <font color=orange>猎手之怒</font>和<font color=orange>深渊挖掘裤</font>带一萃一 |
+| 饰品萃取 | <font color=orange>皇家华戒</font> | <font color=orange>皇家華戒</font> |  |  |
 | 传奇宝石一 | 至简之力 | 樸實之力 |  |  |
 | 传奇宝石二 | 困者之灾 | 囚者之禍 |  |  |
 | 传奇宝石三 | 太极石 | 太極 |  |  |
