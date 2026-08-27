@@ -20,30 +20,9 @@ global ConfigFile := A_ScriptDir "\items.txt"
 ; ============================================================
 
 LoadItems()
-RegisterContextMenu()
 
-
-; ============================================================
-; 处理右键菜单传入的文件
-;
-; 如果脚本是通过右键菜单启动的：
-;
-; MyLauncher.ahk "C:\xxx\test.exe"
-;
-; 那么 A_Args[1] 就是文件路径
-; ============================================================
-
-if A_Args.Length > 0
-{
-    path := A_Args[1]
-
-    if FileExist(path)
-    {
-        AddItem(path)
-    }
-
-    ExitApp
-}
+; 右键菜单的安装/卸载统一由 setup.ahk 管理。
+; 这里不要自动写注册表，否则卸载后只要运行一次 run.ahk 又会被重新装回去。
 
 
 ; ============================================================
@@ -79,14 +58,9 @@ ToggleLauncher()
     global LauncherGui
 
     if IsObject(LauncherGui)
+        and WinExist("ahk_id " LauncherGui.Hwnd)
     {
-        if WinActive("ahk_id " LauncherGui.Hwnd)
-        {
-            HideLauncher()
-            return
-        }
-
-        LauncherGui.Show()
+        HideLauncher()
         return
     }
 
@@ -100,7 +74,16 @@ ToggleLauncher()
 
 ShowLauncher()
 {
-    global LauncherGui
+    global LauncherGui, Items
+
+    if IsObject(LauncherGui)
+    {
+        LauncherGui.Destroy()
+        LauncherGui := ""
+    }
+
+    Items := []
+    LoadItems()
 
     LauncherGui := Gui(
         "-Caption +AlwaysOnTop +Border",
@@ -246,104 +229,6 @@ IsLauncherActive()
     )
 }
 
-
-; ============================================================
-; 注册 Windows 右键菜单
-;
-; 使用：
-;
-; HKEY_CURRENT_USER\Software\Classes
-;
-; 所以不需要管理员权限。
-;
-; 最终效果：
-;
-; 右键文件
-;     ↓
-; 添加到 My Launcher
-; ============================================================
-
-RegisterContextMenu()
-{
-    menuKey :=
-        "HKEY_CURRENT_USER\Software\Classes\*\shell\MyLauncher"
-
-    commandKey :=
-        menuKey "\command"
-
-
-    ; 菜单文字
-    RegWrite(
-        "添加到 My Launcher",
-        "REG_SZ",
-        menuKey
-    )
-
-
-    ; 菜单图标
-    RegWrite(
-        A_AhkPath,
-        "REG_SZ",
-        menuKey,
-        "Icon"
-    )
-
-
-    ; 执行命令
-    ;
-    ; A_AhkPath      = AutoHotkey.exe
-    ; A_ScriptFullPath = 当前脚本
-    ; %1             = Windows 传入的文件路径
-    ;
-    command := Format('"{}" "{}" "%1"', A_AhkPath, A_ScriptFullPath)
-
-    RegWrite(
-        command,
-        "REG_SZ",
-        commandKey
-    )
-}
-
-
-; ============================================================
-; 添加项目
-; ============================================================
-
-AddItem(path)
-{
-    global Items, ConfigFile
-
-    path := Trim(path)
-
-    if path = ""
-        return
-
-
-    ; 避免重复添加
-    for existingPath in Items
-    {
-        if StrCompare(
-            existingPath,
-            path,
-            true
-        ) = 0
-        {
-            return
-        }
-    }
-
-
-    ; 添加到内存
-    Items.Push(path)
-
-
-    ; 写入配置文件
-    FileAppend(
-        path "`n",
-        ConfigFile,
-        "UTF-8"
-    )
-}
 
 
 ; ============================================================

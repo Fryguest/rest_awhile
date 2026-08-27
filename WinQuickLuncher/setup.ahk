@@ -10,7 +10,7 @@
 ; ============================================================
 
 AppName := "My Launcher"
-LauncherScript := A_ScriptDir "\run.ahk"
+LauncherScript := A_ScriptDir "\add.ahk"
 
 RegistryMenuKey :=
     "HKEY_CURRENT_USER\Software\Classes\*\shell\MyLauncher"
@@ -26,9 +26,9 @@ RegistryCommandKey :=
 if !FileExist(LauncherScript)
 {
     MsgBox(
-        "找不到 Launcher.ahk：`n`n"
+        "找不到 add.ahk：`n`n"
         LauncherScript
-        "`n`n请确保 Setup.ahk 和 Launcher.ahk 位于同一个目录。",
+        "`n`n请确保 Setup.ahk 和 add.ahk 位于同一个目录。",
         AppName,
         "Iconx"
     )
@@ -109,7 +109,8 @@ InstallContextMenu(*)
     RegWrite(
         "添加到 " AppName,
         "REG_SZ",
-        RegistryMenuKey
+        RegistryMenuKey,
+        "MUIVerb"
     )
 
 
@@ -165,24 +166,36 @@ UninstallContextMenu(*)
     global AppName
     global RegistryMenuKey
 
-    try
+    if DeleteRegistryTree(RegistryMenuKey)
     {
-        RegDelete(
-            RegistryMenuKey
-        )
-
         MsgBox(
             "右键菜单已经卸载。",
             AppName,
             "Iconi"
         )
     }
-    catch
+    else
     {
         MsgBox(
             "右键菜单不存在，或者删除失败。",
             AppName,
             "Icon!"
         )
+    }
+}
+
+DeleteRegistryTree(key)
+{
+    ; 用 reg.exe 递归删除整个注册表项，比 AHK 内置 RegDelete 更适合清理带子项的菜单。
+    command := Format('{} /c reg delete "{}" /f', A_ComSpec, key)
+
+    try
+    {
+        exitCode := RunWait(command, , "Hide")
+        return exitCode = 0
+    }
+    catch
+    {
+        return false
     }
 }
