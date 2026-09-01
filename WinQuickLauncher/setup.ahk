@@ -57,8 +57,8 @@ InstallContextMenu(*)
     ; 创建菜单项
     RegWrite("添加到 " AppName, "REG_SZ", RegistryMenuKey, "MUIVerb")
 
-    ; 设置图标（暂时使用 AutoHotkey 的图标）
-    RegWrite(A_AhkPath, "REG_SZ", RegistryMenuKey, "Icon")
+    ; 设置图标
+    RegWrite(A_ScriptDir "\ico.ico", "REG_SZ", RegistryMenuKey, "Icon")
 
     ; 设置执行命令（Windows 会把被右键的文件路径放在 %1）
     command := Format('"{}" "{}" "%1"', A_AhkPath, LauncherScript)
