@@ -11,6 +11,7 @@
 ; ============================================================
 
 global LauncherGui := ""
+global LauncherLV := ""
 global Items := []
 global ConfigFile := A_ScriptDir "\items.txt"
 
@@ -103,8 +104,13 @@ ShowLauncher()
         "My Launcher"
     )
 
-    ; 项目按钮
-    CreateButtons()
+    ; 项目列表
+    LauncherGui.SetFont(
+        "s10 norm",
+        "Segoe UI"
+    )
+
+    CreateListView()
 
     ; 关闭窗口
     LauncherGui.OnEvent(
@@ -120,50 +126,89 @@ ShowLauncher()
 
 
 ; ============================================================
-; 创建项目按钮
+; 创建项目列表
 ; ============================================================
 
-CreateButtons()
+CreateListView()
 {
-    global LauncherGui, Items
+    global LauncherGui, LauncherLV, Items
 
-    x := 20
-    y := 60
+    ; 创建 ImageList (大图标 32x32)
+    IL := IL_Create(Items.Length, 1, true)
 
-    buttonWidth := 210
-    buttonHeight := 50
-    gap := 10
+    for index, path in Items
+    {
+        hIcon := ExtractFileIcon(path)
+
+        if hIcon
+        {
+            IL_Add(IL, "HICON:" hIcon)
+            DllCall("DestroyIcon", "Ptr", hIcon)
+        }
+        else
+        {
+            IL_Add(IL, "shell32.dll", 3)
+        }
+    }
+
+    ; 创建 ListView (Icon 模式，自带滚动条)
+    LauncherLV := LauncherGui.AddListView(
+        "x20 y55 w660 h420 Icon",
+        ["Name"]
+    )
+
+    LauncherLV.SetImageList(IL)
 
     for index, path in Items
     {
         name := GetDisplayName(path)
-
-        button := LauncherGui.AddButton(
-            Format(
-                "x{} y{} w{} h{}",
-                x,
-                y,
-                buttonWidth,
-                buttonHeight
-            ),
-            name
-        )
-
-        ; Bind 当前项目的 index
-        button.OnEvent(
-            "Click",
-            LaunchItem.Bind(index)
-        )
-
-        x += buttonWidth + gap
-
-        ; 每 3 个换一行
-        if Mod(index, 3) = 0
-        {
-            x := 20
-            y += buttonHeight + gap
-        }
+        LauncherLV.Add("Icon" index, name)
     }
+
+    LauncherLV.OnEvent(
+        "DoubleClick",
+        OnListViewDoubleClick
+    )
+}
+
+
+; ============================================================
+; 从文件提取图标
+; ============================================================
+
+ExtractFileIcon(path)
+{
+    ; SHGFI_ICON (0x100) | SHGFI_LARGEICON (0x0)
+    cbFileInfo := A_PtrSize + 4 + 4 + 520 + 160
+    fileInfo := Buffer(cbFileInfo, 0)
+
+    result := DllCall(
+        "Shell32\SHGetFileInfoW",
+        "Str", path,
+        "UInt", 0,
+        "Ptr", fileInfo,
+        "UInt", cbFileInfo,
+        "UInt", 0x100,
+        "Ptr"
+    )
+
+    if result
+        return NumGet(fileInfo, 0, "Ptr")
+
+    return 0
+}
+
+
+; ============================================================
+; 双击列表项打开文件
+; ============================================================
+
+OnListViewDoubleClick(LV, rowNumber)
+{
+    if rowNumber < 1
+        return
+
+    LaunchItem(rowNumber)
 }
 
 
