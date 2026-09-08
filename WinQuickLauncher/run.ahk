@@ -1,5 +1,7 @@
 #Requires AutoHotkey v2.0
 #SingleInstance Force
+#Include util.ahk
+#Include recorder.ahk
 TraySetIcon(A_ScriptDir "\ico.ico")
 
 ; ============================================================
@@ -701,11 +703,3 @@ GetMonitorAt(x, y)
     return MonitorGetPrimary()
 }
 
-; ============================================================
-; 日志
-; ============================================================
-
-Log(msg)
-{
-    FileAppend(FormatTime(, "yyyy-MM-dd HH:mm:ss") " | " msg "`n", A_ScriptDir "\launcher.log")
-}
