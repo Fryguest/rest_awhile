@@ -7,11 +7,15 @@
 ; F2：松开时开始 / 停止回放。
 ; 所有公开状态与函数均使用 Rec_ 前缀，便于后续 #Include 到 run.ahk。
 
-global Rec_State := "idle"                 ; idle | armed | recording | replaying
+global Rec_State := "idle"                 ; idle | armed | recording | save_pending | replaying
 global Rec_Events := []
 global Rec_DownKeys := Map()
 global Rec_MouseDowns := Map()
 global Rec_InputGui := ""
+global Rec_StatusGui := ""
+global Rec_StatusText := ""
+global Rec_StatusX := 0
+global Rec_StatusY := 0
 global Rec_QpcFrequency := 0
 global Rec_RecordStartQpc := 0
 global Rec_DragWidth := 0
@@ -75,6 +79,69 @@ Rec_CreateInputReceiver()
     OnMessage(0x00FF, Rec_OnWmInput)  ; WM_INPUT
 }
 
+Rec_ShowStatus(message, durationMs := 0, reposition := false)
+{
+    global Rec_StatusGui, Rec_StatusText, Rec_StatusX, Rec_StatusY
+
+    SetTimer(Rec_HideStatus, 0)
+    if !IsObject(Rec_StatusGui)
+    {
+        ; 不激活、置顶、工具窗口；分层窗口配合透明样式实现点击穿透。
+        Rec_StatusGui := Gui("+AlwaysOnTop -Caption +ToolWindow -DPIScale +E0x08080020", "录制状态")
+        Rec_StatusGui.BackColor := "202020"
+        Rec_StatusGui.MarginX := 12
+        Rec_StatusGui.MarginY := 10
+        Rec_StatusGui.SetFont("s10 cFFFFFF", "Microsoft YaHei UI")
+        Rec_StatusText := Rec_StatusGui.AddText("w280 h24 +0x200", "")
+        WinSetTransparent(235, Rec_StatusGui.Hwnd)
+    }
+
+    if reposition
+    {
+        monitor := MonitorGetPrimary()
+        if Rec_GetCursorPosition(&x, &y)
+        {
+            Loop MonitorGetCount()
+            {
+                MonitorGet(A_Index, &left, &top, &right, &bottom)
+                if (x >= left && x < right && y >= top && y < bottom)
+                {
+                    monitor := A_Index
+                    break
+                }
+            }
+        }
+        MonitorGetWorkArea(monitor, &left, &top, &right, &bottom)
+        Rec_StatusX := Max(left, right - 304 - 16)
+        Rec_StatusY := top + 16
+    }
+
+    Rec_StatusText.Text := message
+    Rec_StatusGui.Show("NA x" Rec_StatusX " y" Rec_StatusY " w304 h44")
+    if (durationMs > 0)
+        SetTimer(Rec_HideStatus, -durationMs)
+}
+
+Rec_HideStatus()
+{
+    global Rec_StatusGui
+
+    SetTimer(Rec_HideStatus, 0)
+    if IsObject(Rec_StatusGui)
+        Rec_StatusGui.Hide()
+}
+
+Rec_DestroyStatus()
+{
+    global Rec_StatusGui, Rec_StatusText
+
+    SetTimer(Rec_HideStatus, 0)
+    if IsObject(Rec_StatusGui)
+        Rec_StatusGui.Destroy()
+    Rec_StatusGui := ""
+    Rec_StatusText := ""
+}
+
 Rec_RegisterRawInput(hwnd)
 {
     ridSize := 8 + A_PtrSize
@@ -122,6 +189,7 @@ Rec_Arm()
     Rec_MouseDowns := Map()
     Rec_RawInputErrorCount := 0
     Rec_State := "armed"
+    Rec_ShowStatus("待录制 · F1 取消", 0, true)
     Log("Recorder | 进入待录制状态")
 }
 
@@ -133,22 +201,39 @@ Rec_Stop()
     {
         Rec_State := "idle"
         Log("Recorder | 待录制状态已取消：没有有效事件")
+        Rec_ShowStatus("已取消录制", 2000)
         return
     }
 
-    if (Rec_State != "recording")
+    if (Rec_State != "recording" && Rec_State != "save_pending")
         return
 
-    Log("Recorder | 停止录制：事件数=" Rec_Events.Length)
-    Rec_AppendPendingReleases()
-    if (Rec_RawInputErrorCount > 0)
-        Log("Recorder | Raw Input 读取失败次数=" Rec_RawInputErrorCount)
-    Rec_SaveRecording()
+    if (Rec_State = "recording")
+    {
+        Rec_State := "save_pending"
+        Log("Recorder | 停止录制：事件数=" Rec_Events.Length)
+        Rec_AppendPendingReleases()
+        if (Rec_RawInputErrorCount > 0)
+            Log("Recorder | Raw Input 读取失败次数=" Rec_RawInputErrorCount)
+    }
+
+    try
+        Rec_SaveRecording()
+    catch Error as err
+    {
+        Log("Recorder | 保存失败：" err.Message)
+        Rec_ShowStatus("保存失败 · F1 重试")
+        MsgBox("录制保存失败，数据仍保留在内存中。`n"
+            "关闭提示后可按 F1 重试；退出或重载脚本会丢失这些数据。`n`n"
+            err.Message, "键鼠录制", "Icon!")
+        return
+    }
 
     Rec_State := "idle"
     Rec_Events := []
     Rec_DownKeys := Map()
     Rec_MouseDowns := Map()
+    Rec_ShowStatus("录制已保存", 2000)
 }
 
 Rec_OnWmInput(wParam, lParam, msg, hwnd)
@@ -156,8 +241,8 @@ Rec_OnWmInput(wParam, lParam, msg, hwnd)
     static RID_INPUT := 0x10000003
     global Rec_State, Rec_RawInputErrorCount
 
-    ; 校验、回放及清理期间均不采集输入。
-    if (Rec_State = "replaying")
+    ; 校验、回放、清理及等待保存期间均不采集输入。
+    if (Rec_State = "replaying" || Rec_State = "save_pending")
         return
 
     ; RAWINPUTHEADER: UInt + UInt + HANDLE + WPARAM
@@ -327,6 +412,7 @@ Rec_Begin(qpc)
 
     Rec_RecordStartQpc := qpc
     Rec_State := "recording"
+    Rec_ShowStatus("脚本录制中 · F1 停止")
     Log("Recorder | 录制开始")
 }
 
@@ -425,6 +511,7 @@ Rec_OnExit(exitReason, exitCode)
 
     ; 进程退出会自动注销；这里显式注销避免作为库使用时遗留注册。
     try Rec_UnregisterRawInput()
+    try Rec_DestroyStatus()
 }
 
 Rec_UnregisterRawInput()
@@ -466,6 +553,7 @@ Rec_ToggleReplay()
     Rec_ReplayMouseDowns := Map()
     Rec_State := "replaying"
     Log("Replay | 收到回放请求，进入 replaying 状态")
+    Rec_ShowStatus("脚本播放中 · F2 停止", 0, true)
     SetTimer(Rec_Replay, -1)
 }
 
@@ -529,7 +617,13 @@ Rec_Replay()
     }
 
     if (failure != "")
+    {
+        Rec_HideStatus()
         MsgBox("本次回放已停止。`n`n" failure, "键鼠回放", "Icon!")
+        return
+    }
+
+    Rec_ShowStatus(Rec_ReplayStopRequested ? "已停止播放" : "脚本播放完成", 2000)
 }
 
 ; 按绝对时刻等待；到期事件也处理一次消息，保证密集回放时能响应 F2。
