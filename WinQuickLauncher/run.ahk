@@ -62,13 +62,16 @@ Escape::
 
 global CfgIconSize := "L"
 global CfgOpacity := 230
+global CfgRecordingFile := A_ScriptDir "\recording.tsv"
+global CfgReplayCount := 1
 
 LoadItems()
 LoadConfig()
+Rec_Configure(CfgRecordingFile, CfgReplayCount)
 
 LoadConfig()
 {
-    global CfgFile, CfgIconSize, CfgOpacity, SizeMap
+    global CfgFile, CfgIconSize, CfgOpacity, CfgRecordingFile, CfgReplayCount, SizeMap
     if !FileExist(CfgFile)
     {
         Log("LoadConfig: file not found, using defaults IconSize=" CfgIconSize " Opacity=" CfgOpacity)
@@ -97,16 +100,26 @@ LoadConfig()
             if (CfgOpacity > 255)
                 CfgOpacity := 255
         }
+        else if (key = "RecordingFile" && val != "")
+            CfgRecordingFile := val
+        else if (key = "ReplayCount" && RegExMatch(val, "^\d+$"))
+        {
+            try
+                CfgReplayCount := Integer(val)
+            catch Error
+                Log("LoadConfig: invalid ReplayCount=[" val "], using default")
+        }
     }
     ; Log("LoadConfig: final IconSize=" CfgIconSize " Opacity=" CfgOpacity)
 }
 
-SaveConfig(iconSize, opacity)
+SaveConfig(iconSize, opacity, recordingFile, replayCount)
 {
     global CfgFile
     if FileExist(CfgFile)
         FileDelete(CfgFile)
-    FileAppend("IconSize=" iconSize "`nOpacity=" opacity "`n", CfgFile, "UTF-8")
+    FileAppend("IconSize=" iconSize "`nOpacity=" opacity "`nRecordingFile=" recordingFile
+        "`nReplayCount=" replayCount "`n", CfgFile, "UTF-8")
 }
 
 ; ============================================================
@@ -284,8 +297,7 @@ CreateListView()
 
     for index, path in Items
     {
-        name := GetDisplayName(path)
-        LauncherLV.Add("Icon" index, name)
+        LauncherLV.Add("Icon" index, "")
     }
 
     LauncherLV.OnEvent("DoubleClick", OnListViewDoubleClick)
@@ -298,11 +310,11 @@ CreateListView()
 
 CreateSettingsView()
 {
-    global ContentGui, ScreenW, ScreenH, CfgIconSize, CfgOpacity
+    global ContentGui, ScreenW, ScreenH, CfgIconSize, CfgOpacity, CfgRecordingFile, CfgReplayCount
 
-    panelW := 400
+    panelW := 640
     panelX := (ScreenW - panelW) // 2
-    panelY := ScreenH // 2 - 150
+    panelY := ScreenH // 2 - 210
 
     ; 右上角返回按钮
     ContentGui.SetFont("s24 norm cAAAAAA", "Segoe MDL2 Assets")
@@ -326,9 +338,25 @@ CreateSettingsView()
     global lblOpacity := ContentGui.AddText("x" (panelX + 330) " y" (panelY + 130) " w60 h36 0x200", CfgOpacity)
     sliderOpacity.OnEvent("Change", OnOpacityChange)
 
+    ; 录制文件路径
+    ContentGui.SetFont("s14 norm cWhite", "Segoe UI")
+    ContentGui.AddText("x" panelX " y" (panelY + 190) " w120 h36 0x200", "录制文件路径")
+    ContentGui.SetFont("s14 norm c000000", "Segoe UI")
+    global edtRecordingFile := ContentGui.AddEdit("x" (panelX + 140) " y" (panelY + 190) " w360 h36", CfgRecordingFile)
+    browseBtn := ContentGui.AddButton("x" (panelX + 510) " y" (panelY + 190) " w110 h36", "浏览")
+    browseBtn.OnEvent("Click", OnBrowseRecordingFile)
+
+    ; 播放次数：0 表示无限播放
+    ContentGui.SetFont("s14 norm cWhite", "Segoe UI")
+    ContentGui.AddText("x" panelX " y" (panelY + 250) " w120 h36 0x200", "播放次数")
+    ContentGui.SetFont("s14 norm c000000", "Segoe UI")
+    global edtReplayCount := ContentGui.AddEdit("x" (panelX + 140) " y" (panelY + 250) " w200 h36 Number", CfgReplayCount)
+    ContentGui.SetFont("s12 norm cWhite", "Segoe UI")
+    ContentGui.AddText("x" (panelX + 350) " y" (panelY + 250) " w180 h36 0x200", "0 表示无限播放")
+
     ; 保存按钮
     ContentGui.SetFont("s14 norm", "Segoe UI")
-    saveBtn := ContentGui.AddButton("x" (panelX + 130) " y" (panelY + 210) " w140 h42", "保存")
+    saveBtn := ContentGui.AddButton("x" (panelX + 250) " y" (panelY + 330) " w140 h42", "保存")
     saveBtn.OnEvent("Click", OnSaveClick)
 }
 
@@ -368,13 +396,44 @@ OnOpacityChange(ctrl, *)
     lblOpacity.Value := ctrl.Value
 }
 
+OnBrowseRecordingFile(*)
+{
+    global edtRecordingFile
+    selectedFile := FileSelect(1, A_ScriptDir, "选择录制文件", "录制文件 (*.tsv)")
+    if (selectedFile != "")
+        edtRecordingFile.Value := selectedFile
+}
+
 OnSaveClick(*)
 {
-    global ddlSize, sliderOpacity, CfgIconSize, CfgOpacity, ViewMode, BgGui
+    global ddlSize, sliderOpacity, edtRecordingFile, edtReplayCount
+    global CfgIconSize, CfgOpacity, CfgRecordingFile, CfgReplayCount, ViewMode, BgGui
+    recordingFile := Trim(edtRecordingFile.Value)
+    if (recordingFile = "" || InStr(recordingFile, "`n") || InStr(recordingFile, "`r"))
+    {
+        MsgBox("请输入有效的录制文件路径。", "设置", "Icon!")
+        return
+    }
+    countText := Trim(edtReplayCount.Value)
+    if !RegExMatch(countText, "^\d+$")
+    {
+        MsgBox("播放次数必须是非负整数，0 表示无限播放。", "设置", "Icon!")
+        return
+    }
+    try
+        replayCount := Integer(countText)
+    catch Error
+    {
+        MsgBox("播放次数超出可表示的范围。", "设置", "Icon!")
+        return
+    }
     CfgIconSize := SizeLabels[ddlSize.Value]
     CfgOpacity := sliderOpacity.Value
+    CfgRecordingFile := recordingFile
+    CfgReplayCount := replayCount
     Log("OnSaveClick: iconSize=" CfgIconSize " opacity=" CfgOpacity)
-    SaveConfig(CfgIconSize, CfgOpacity)
+    SaveConfig(CfgIconSize, CfgOpacity, CfgRecordingFile, CfgReplayCount)
+    Rec_Configure(CfgRecordingFile, CfgReplayCount)
     ; 更新背景层透明度
     WinSetTransparent(CfgOpacity, "ahk_id " BgGui.Hwnd)
     ; 返回主页

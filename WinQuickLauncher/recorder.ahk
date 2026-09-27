@@ -3,8 +3,8 @@
 #Include util.ahk
 
 ; 独立的 Raw Input 录制器。
-; F1：进入待录制状态 / 停止并保存录制。
-; F2：松开时开始 / 停止回放。
+; Ctrl+2：进入待录制状态 / 停止并保存录制。
+; Ctrl+3：开始 / 停止回放。
 ; 所有公开状态与函数均使用 Rec_ 前缀，便于后续 #Include 到 run.ahk。
 
 global Rec_State := "idle"                 ; idle | armed | recording | save_pending | replaying
@@ -23,6 +23,9 @@ global Rec_DragHeight := 0
 global Rec_RawInputErrorCount := 0
 global Rec_OutputFile := A_ScriptDir "\recording.tsv"
 global Rec_TempFile := A_ScriptDir "\recording.tmp"
+global Rec_ConfiguredFile := Rec_OutputFile
+global Rec_ConfiguredReplayCount := 1
+global Rec_ActiveReplayCount := 1
 global Rec_ReplayStopRequested := false
 global Rec_ReplayDownKeys := Map()
 global Rec_ReplayMouseDowns := Map()
@@ -33,8 +36,15 @@ Rec_CreateInputReceiver()
 Log("Recorder | Raw Input 接收器已初始化")
 OnExit(Rec_OnExit)
 
-$F1::Rec_Toggle()
-*$F2 Up::Rec_ToggleReplay()
+$^2::Rec_Toggle()
+$^3::Rec_ToggleReplay()
+
+Rec_Configure(filePath, replayCount)
+{
+    global Rec_ConfiguredFile, Rec_ConfiguredReplayCount
+    Rec_ConfiguredFile := filePath
+    Rec_ConfiguredReplayCount := replayCount
+}
 
 Rec_EnableDpiAwareness()
 {
@@ -170,7 +180,7 @@ Rec_Toggle()
 
     if (Rec_State = "replaying")
     {
-        Log("Replay | 忽略 F1：回放流程尚未结束")
+        Log("Replay | 忽略 Ctrl+2：回放流程尚未结束")
         return
     }
 
@@ -183,13 +193,16 @@ Rec_Toggle()
 Rec_Arm()
 {
     global Rec_State, Rec_Events, Rec_DownKeys, Rec_MouseDowns, Rec_RawInputErrorCount
+    global Rec_ConfiguredFile, Rec_OutputFile, Rec_TempFile
 
+    Rec_OutputFile := Rec_ConfiguredFile
+    Rec_TempFile := Rec_OutputFile ".tmp"
     Rec_Events := []
     Rec_DownKeys := Map()
     Rec_MouseDowns := Map()
     Rec_RawInputErrorCount := 0
     Rec_State := "armed"
-    Rec_ShowStatus("待录制 · F1 取消", 0, true)
+    Rec_ShowStatus("待录制 · Ctrl+2 取消", 0, true)
     Log("Recorder | 进入待录制状态")
 }
 
@@ -222,9 +235,9 @@ Rec_Stop()
     catch Error as err
     {
         Log("Recorder | 保存失败：" err.Message)
-        Rec_ShowStatus("保存失败 · F1 重试")
+        Rec_ShowStatus("保存失败 · Ctrl+2 重试")
         MsgBox("录制保存失败，数据仍保留在内存中。`n"
-            "关闭提示后可按 F1 重试；退出或重载脚本会丢失这些数据。`n`n"
+            "关闭提示后可按 Ctrl+2 重试；退出或重载脚本会丢失这些数据。`n`n"
             err.Message, "键鼠录制", "Icon!")
         return
     }
@@ -309,8 +322,9 @@ Rec_HandleRawKeyboard(rawData, dataOffset)
     isKeyUp := (flags & 0x01) != 0       ; RI_KEY_BREAK
     isExtended := (flags & 0x02) != 0    ; RI_KEY_E0
 
-    ; F1、F2 仅用于控制录制和回放，永不写入事件。
-    if (virtualKey = 0x70 || virtualKey = 0x71 || virtualKey = 0 || virtualKey = 0xFF)
+    ; 控制热键的数字键不写入事件，普通数字键仍可录制。
+    if (((virtualKey = 0x32 || virtualKey = 0x33) && GetKeyState("Ctrl", "P"))
+        || virtualKey = 0 || virtualKey = 0xFF)
         return
 
     if (Rec_State = "armed" && isKeyUp)
@@ -412,7 +426,7 @@ Rec_Begin(qpc)
 
     Rec_RecordStartQpc := qpc
     Rec_State := "recording"
-    Rec_ShowStatus("脚本录制中 · F1 停止")
+    Rec_ShowStatus("脚本录制中 · Ctrl+2 停止")
     Log("Recorder | 录制开始")
 }
 
@@ -531,39 +545,44 @@ Rec_UnregisterRawInput()
     DllCall("User32\RegisterRawInputDevices", "Ptr", rawDevices, "UInt", 2, "UInt", ridSize)
 }
 
-; 热键只切换状态，播放交给一次性定时器，避免占住 F2 热键线程。
+; 热键只切换状态，播放交给一次性定时器，避免占住 Ctrl+3 热键线程。
 Rec_ToggleReplay()
 {
     global Rec_State, Rec_ReplayStopRequested, Rec_ReplayDownKeys, Rec_ReplayMouseDowns
+    global Rec_ConfiguredFile, Rec_ConfiguredReplayCount, Rec_OutputFile, Rec_ActiveReplayCount
 
     if (Rec_State = "replaying")
     {
         Rec_ReplayStopRequested := true
-        Log("Replay | 收到 F2 停止请求")
+        Log("Replay | 收到 Ctrl+3 停止请求")
         return
     }
     if (Rec_State != "idle")
     {
-        Log("Replay | 忽略 F2：当前状态=" Rec_State)
+        Log("Replay | 忽略 Ctrl+3：当前状态=" Rec_State)
         return
     }
 
+    Rec_OutputFile := Rec_ConfiguredFile
+    Rec_ActiveReplayCount := Rec_ConfiguredReplayCount
     Rec_ReplayStopRequested := false
     Rec_ReplayDownKeys := Map()
     Rec_ReplayMouseDowns := Map()
     Rec_State := "replaying"
     Log("Replay | 收到回放请求，进入 replaying 状态")
-    Rec_ShowStatus("脚本播放中 · F2 停止", 0, true)
+    Rec_ShowStatus("脚本播放中 · Ctrl+3 停止", 0, true)
     SetTimer(Rec_Replay, -1)
 }
 
 Rec_Replay()
 {
-    global Rec_State, Rec_OutputFile, Rec_QpcFrequency, Rec_ReplayStopRequested, Rec_ReplayDownKeys, Rec_ReplayMouseDowns
+    global Rec_State, Rec_OutputFile, Rec_ActiveReplayCount, Rec_QpcFrequency
+    global Rec_ReplayStopRequested, Rec_ReplayDownKeys, Rec_ReplayMouseDowns
     failure := ""
     completed := 0
     total := 0
     lineNumber := 0
+    roundsCompleted := 0
 
     try
     {
@@ -575,23 +594,43 @@ Rec_Replay()
 
         if (total > 0 && !Rec_ReplayStopRequested)
         {
-            startQpc := Rec_GetQpc()
-            Log("Replay | 开始发送事件")
-            for index, event in data.Events
+            while (!Rec_ReplayStopRequested
+                && (Rec_ActiveReplayCount = 0 || roundsCompleted < Rec_ActiveReplayCount))
             {
-                lineNumber := data.EventLines[index]
-                targetQpc := startQpc + Round(event[1] * Rec_QpcFrequency / 1000000)
-                Log("Replay | 准备事件：序号=" index " 行号=" lineNumber " 类型=" event[2] " 计划偏移us=" event[1])
-                if !Rec_ReplayWaitUntil(targetQpc)
+                startQpc := Rec_GetQpc()
+                Log("Replay | 开始第 " (roundsCompleted + 1) " 轮发送事件")
+                for index, event in data.Events
+                {
+                    lineNumber := data.EventLines[index]
+                    targetQpc := startQpc + Round(event[1] * Rec_QpcFrequency / 1000000)
+                    Log("Replay | 准备事件：序号=" index " 行号=" lineNumber " 类型=" event[2] " 计划偏移us=" event[1])
+                    if !Rec_ReplayWaitUntil(targetQpc)
+                        break
+
+                    lateUs := Round((Rec_GetQpc() - targetQpc) * 1000000 / Rec_QpcFrequency)
+                    Log("Replay | 事件到期：行号=" lineNumber " 落后us=" lateUs)
+                    if !Rec_ReplayEvent(event)
+                        break
+
+                    completed += 1
+                    Log("Replay | 事件发送完成：行号=" lineNumber " 已完成=" completed "/" total)
+                }
+
+                if Rec_ReplayStopRequested
                     break
 
-                lateUs := Round((Rec_GetQpc() - targetQpc) * 1000000 / Rec_QpcFrequency)
-                Log("Replay | 事件到期：行号=" lineNumber " 落后us=" lateUs)
-                if !Rec_ReplayEvent(event)
+                ; 两轮之间清理悬挂输入；清理失败时不继续重复。
+                releaseFailure := Rec_ReplayReleaseInputs()
+                if (releaseFailure != "")
+                {
+                    failure := releaseFailure
                     break
+                }
 
-                completed += 1
-                Log("Replay | 事件发送完成：行号=" lineNumber " 已完成=" completed "/" total)
+                roundsCompleted += 1
+                Log("Replay | 第 " roundsCompleted " 轮完成")
+                if (Rec_ActiveReplayCount = 0 || roundsCompleted < Rec_ActiveReplayCount)
+                    Sleep(-1)
             }
         }
     }
@@ -608,7 +647,8 @@ Rec_Replay()
             releaseFailure := Rec_ReplayReleaseInputs()
             if (releaseFailure != "")
                 failure .= (failure = "" ? "" : "`n") releaseFailure
-            Log("Replay | 回放流程结束：已完成=" completed "/" total " 停止请求=" Rec_ReplayStopRequested " 存在错误=" (failure != ""))
+            Log("Replay | 回放流程结束：完成轮数=" roundsCompleted " 已发送事件数=" completed
+                " 每轮事件数=" total " 停止请求=" Rec_ReplayStopRequested " 存在错误=" (failure != ""))
         }
         finally
         {
@@ -626,7 +666,7 @@ Rec_Replay()
     Rec_ShowStatus(Rec_ReplayStopRequested ? "已停止播放" : "脚本播放完成", 2000)
 }
 
-; 按绝对时刻等待；到期事件也处理一次消息，保证密集回放时能响应 F2。
+; 按绝对时刻等待；到期事件也处理一次消息，保证密集回放时能响应 Ctrl+3。
 Rec_ReplayWaitUntil(targetQpc)
 {
     global Rec_ReplayStopRequested, Rec_QpcFrequency
