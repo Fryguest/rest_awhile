@@ -13,6 +13,8 @@ AppName := "My Launcher"
 LauncherScript := A_ScriptDir "\add.ahk"
 RegistryMenuKey := "HKEY_CURRENT_USER\Software\Classes\*\shell\MyLauncher"
 RegistryCommandKey := RegistryMenuKey "\command"
+RegistryFolderMenuKey := "HKEY_CURRENT_USER\Software\Classes\Directory\shell\MyLauncher"
+RegistryFolderCommandKey := RegistryFolderMenuKey "\command"
 
 ; ============================================================
 ; 检查 Launcher 是否存在
@@ -53,20 +55,24 @@ myGui.Show("w400 h180")
 InstallContextMenu(*)
 {
     global AppName, LauncherScript, RegistryMenuKey, RegistryCommandKey
+    global RegistryFolderMenuKey, RegistryFolderCommandKey
 
     ; 创建菜单项
     RegWrite("添加到 " AppName, "REG_SZ", RegistryMenuKey, "MUIVerb")
+    RegWrite("添加到 " AppName, "REG_SZ", RegistryFolderMenuKey, "MUIVerb")
 
     ; 设置图标
     RegWrite(A_ScriptDir "\ico.ico", "REG_SZ", RegistryMenuKey, "Icon")
+    RegWrite(A_ScriptDir "\ico.ico", "REG_SZ", RegistryFolderMenuKey, "Icon")
 
     ; 设置执行命令（Windows 会把被右键的文件路径放在 %1）
     command := Format('"{}" "{}" "%1"', A_AhkPath, LauncherScript)
     RegWrite(command, "REG_SZ", RegistryCommandKey)
+    RegWrite(command, "REG_SZ", RegistryFolderCommandKey)
 
     MsgBox(
         "右键菜单安装成功！`n`n"
-        "现在右键任意文件，应该可以看到：`n"
+        "现在右键文件或文件夹，应该可以看到：`n"
         "「添加到 " AppName "」",
         AppName, "Iconi"
     )
@@ -78,9 +84,11 @@ InstallContextMenu(*)
 
 UninstallContextMenu(*)
 {
-    global AppName, RegistryMenuKey
+    global AppName, RegistryMenuKey, RegistryFolderMenuKey
 
-    if DeleteRegistryTree(RegistryMenuKey)
+    removedFile := DeleteRegistryTree(RegistryMenuKey)
+    removedFolder := DeleteRegistryTree(RegistryFolderMenuKey)
+    if (removedFile && removedFolder)
         MsgBox("右键菜单已经卸载。", AppName, "Iconi")
     else
         MsgBox("右键菜单不存在，或者删除失败。", AppName, "Icon!")
