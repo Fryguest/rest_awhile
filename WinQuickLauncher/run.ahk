@@ -312,7 +312,7 @@ CreateSettingsView()
 {
     global ContentGui, ScreenW, ScreenH, CfgIconSize, CfgOpacity, CfgRecordingFile, CfgReplayCount
 
-    panelW := 640
+    panelW := 770
     panelX := (ScreenW - panelW) // 2
     panelY := ScreenH // 2 - 210
 
@@ -323,40 +323,40 @@ CreateSettingsView()
 
     ; 标题
     ContentGui.SetFont("s20 bold cWhite", "Segoe UI")
-    ContentGui.AddText("x" panelX " y" panelY " w" panelW " h40 Center", "设置")
+    ContentGui.AddText("x" panelX " y" panelY " w" panelW " h60 Center", "设置")
 
     ; 图标大小
     ContentGui.SetFont("s14 norm cWhite", "Segoe UI")
-    ContentGui.AddText("x" panelX " y" (panelY + 70) " w120 h36 0x200", "图标大小")
+    ContentGui.AddText("x" panelX " y" (panelY + 70) " w240 h36 0x200", "图标大小")
     ContentGui.SetFont("s14 norm c000000", "Segoe UI")
-    global ddlSize := ContentGui.AddDropDownList("x" (panelX + 140) " y" (panelY + 70) " w200 h400 Choose" GetSizeIndex(CfgIconSize), ["小", "中", "大"])
+    global ddlSize := ContentGui.AddDropDownList("x" (panelX + 260) " y" (panelY + 70) " w200 h400 Choose" GetSizeIndex(CfgIconSize), ["小", "中", "大"])
 
     ; 透明度
     ContentGui.SetFont("s14 norm cWhite", "Segoe UI")
-    ContentGui.AddText("x" panelX " y" (panelY + 130) " w120 h36 0x200", "透明度")
-    global sliderOpacity := ContentGui.AddSlider("x" (panelX + 140) " y" (panelY + 130) " w180 h36 Range100-255 ToolTip", CfgOpacity)
-    global lblOpacity := ContentGui.AddText("x" (panelX + 330) " y" (panelY + 130) " w60 h36 0x200", CfgOpacity)
+    ContentGui.AddText("x" panelX " y" (panelY + 140) " w240 h36 0x200", "透明度")
+    global sliderOpacity := ContentGui.AddSlider("x" (panelX + 260) " y" (panelY + 140) " w180 h36 Range100-255 ToolTip", CfgOpacity)
+    global lblOpacity := ContentGui.AddText("x" (panelX + 450) " y" (panelY + 140) " w60 h36 0x200", CfgOpacity)
     sliderOpacity.OnEvent("Change", OnOpacityChange)
 
     ; 录制文件路径
     ContentGui.SetFont("s14 norm cWhite", "Segoe UI")
-    ContentGui.AddText("x" panelX " y" (panelY + 190) " w120 h36 0x200", "录制文件路径")
+    ContentGui.AddText("x" panelX " y" (panelY + 210) " w240 h36 0x200", "录制文件路径")
     ContentGui.SetFont("s14 norm c000000", "Segoe UI")
-    global edtRecordingFile := ContentGui.AddEdit("x" (panelX + 140) " y" (panelY + 190) " w360 h36", CfgRecordingFile)
-    browseBtn := ContentGui.AddButton("x" (panelX + 510) " y" (panelY + 190) " w110 h36", "浏览")
+    global edtRecordingFile := ContentGui.AddEdit("x" (panelX + 260) " y" (panelY + 210) " w360 h48", CfgRecordingFile)
+    browseBtn := ContentGui.AddButton("x" (panelX + 630) " y" (panelY + 210) " w110 h36", "浏览")
     browseBtn.OnEvent("Click", OnBrowseRecordingFile)
 
     ; 播放次数：0 表示无限播放
     ContentGui.SetFont("s14 norm cWhite", "Segoe UI")
-    ContentGui.AddText("x" panelX " y" (panelY + 250) " w120 h36 0x200", "播放次数")
+    ContentGui.AddText("x" panelX " y" (panelY + 280) " w240 h36 0x200", "播放次数")
     ContentGui.SetFont("s14 norm c000000", "Segoe UI")
-    global edtReplayCount := ContentGui.AddEdit("x" (panelX + 140) " y" (panelY + 250) " w200 h36 Number", CfgReplayCount)
+    global edtReplayCount := ContentGui.AddEdit("x" (panelX + 260) " y" (panelY + 280) " w200 h48 Number", CfgReplayCount)
     ContentGui.SetFont("s12 norm cWhite", "Segoe UI")
-    ContentGui.AddText("x" (panelX + 350) " y" (panelY + 250) " w180 h36 0x200", "0 表示无限播放")
+    ContentGui.AddText("x" (panelX + 470) " y" (panelY + 280) " w180 h36 0x200", "0 表示无限播放")
 
     ; 保存按钮
     ContentGui.SetFont("s14 norm", "Segoe UI")
-    saveBtn := ContentGui.AddButton("x" (panelX + 250) " y" (panelY + 330) " w140 h42", "保存")
+    saveBtn := ContentGui.AddButton("x" (panelX + 315) " y" (panelY + 380) " w140 h42", "保存")
     saveBtn.OnEvent("Click", OnSaveClick)
 }
 
@@ -398,7 +398,8 @@ OnOpacityChange(ctrl, *)
 
 OnBrowseRecordingFile(*)
 {
-    global edtRecordingFile
+    global ContentGui, edtRecordingFile
+    ContentGui.Opt("+OwnDialogs")
     selectedFile := FileSelect(1, A_ScriptDir, "选择录制文件", "录制文件 (*.tsv)")
     if (selectedFile != "")
         edtRecordingFile.Value := selectedFile
