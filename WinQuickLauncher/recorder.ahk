@@ -225,6 +225,8 @@ Rec_Stop()
     {
         Rec_State := "save_pending"
         Log("Recorder | 停止录制：事件数=" Rec_Events.Length)
+        ; 未观测到松手的按下落在录制窗口之外，整条丢弃，不伪造 up。
+        Rec_DropUnclosedEvents()
         Rec_AppendPendingReleases()
         if (Rec_RawInputErrorCount > 0)
             Log("Recorder | Raw Input 读取失败次数=" Rec_RawInputErrorCount)
@@ -448,6 +450,43 @@ Rec_AppendEvent(qpc, type, args*)
     Rec_Events.Push(event)
 }
 
+; 丢弃停止时仍未闭合的键盘按下：录制窗口内没有观测到它的松手，
+; 保留则文件 KD/KU 不配对，补发则以停止时刻伪造松手时间。
+; 丢弃停止时仍未闭合的输入：录制窗口内没有观测到它的松手，
+; 保留则文件 down/up 不配对，补发则以停止时刻伪造松手时间。
+Rec_DropUnclosedEvents()
+{
+    global Rec_Events, Rec_DownKeys, Rec_MouseDowns
+
+    if !Rec_DownKeys.Count && !Rec_MouseDowns.Count
+        return 0
+
+    kept := []
+    dropped := 0
+    for event in Rec_Events
+    {
+        if (event[2] == "KD" || event[2] == "KU")
+            unclosed := Rec_DownKeys.Has(event[3] ":" event[4] ":" event[5])
+        else if (event[2] == "MD" || event[2] == "MU")
+            unclosed := Rec_MouseDowns.Has(event[3])
+        else
+            unclosed := false
+
+        if unclosed
+        {
+            Log("Recorder | 丢弃未闭合输入：" event[2] " " event[3])
+            dropped += 1
+            continue
+        }
+        kept.Push(event)
+    }
+
+    Rec_Events := kept
+    Rec_DownKeys := Map()
+    Rec_MouseDowns := Map()
+    return dropped
+}
+
 Rec_AppendPendingReleases()
 {
     global Rec_DownKeys, Rec_MouseDowns, Rec_DragWidth, Rec_DragHeight
@@ -521,7 +560,10 @@ Rec_OnExit(exitReason, exitCode)
 
     Log("Recorder | 脚本退出：reason=" exitReason " code=" exitCode)
     if (Rec_State = "recording")
+    {
+        Rec_DropUnclosedEvents()
         Rec_AppendPendingReleases()
+    }
 
     ; 进程退出会自动注销；这里显式注销避免作为库使用时遗留注册。
     try Rec_UnregisterRawInput()
