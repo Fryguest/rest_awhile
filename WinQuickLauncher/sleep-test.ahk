@@ -11,40 +11,33 @@ out := "时钟分辨率：" Resolution() "`n"
 TimerHandle := CreateHighResTimer()
 out .= "高精度 waitable timer 句柄=" TimerHandle "（0 表示创建失败）`n`n"
 
-for intervalMs in [30, 6]
+for eventHz in [60, 6]
 {
-    out .= "== 目标间隔 " intervalMs " ms，每种策略 150 次 ==`n"
-    for name in ["sleep", "sleep+spin", "timer", "spin"]
+    out .= "== 目标间隔 1/" eventHz " 秒，每种策略 150 次 ==`n"
+    ; for name in ["timer", "timer+spin1000", "timer-segment+spin1000"]
+    for name in ["timer-segment20", "timer+spin10000"]
     {
-        if (name != "sleep" && name != "sleep+spin" && TimerHandle = 0 && InStr(name, "timer"))
+        if (TimerHandle = 0 && InStr(name, "timer"))
         {
             out .= Format("  {:-10s} 跳过（无高精度定时器）`n", name)
             continue
         }
-        s := MeasureStrategy(name, intervalMs, 150)
+        s := MeasureStrategy(name, 1000 / eventHz, 150, eventHz)
+        out .= Format("  {}：CPU {:.1f} ms，单核占用 {:.1f}%`n", name, s.cpuMs, s.cpuPercent)
         out .= Format("  {:-10s} 迟到 ms：最小 {:.3f}  中位 {:.3f}  p90 {:.3f}  最大 {:.3f}  标准差 {:.3f}`n"
             , name, s.min, s.median, s.p90, s.max, s.sd)
     }
     out .= "`n"
 }
 
-out .= "== timeBeginPeriod(1) 生效期间 ==`n"
-DllCall("Winmm\timeBeginPeriod", "UInt", 1)
-out .= "  时钟分辨率：" Resolution() "`n"
-for name in ["sleep", "sleep+spin"]
-{
-    s := MeasureStrategy(name, 30, 150)
-    out .= Format("  {:-10s} 迟到 ms：最小 {:.3f}  中位 {:.3f}  p90 {:.3f}  最大 {:.3f}  标准差 {:.3f}`n"
-        , name, s.min, s.median, s.p90, s.max, s.sd)
-}
-DllCall("Winmm\timeEndPeriod", "UInt", 1)
-
 out .= "`n== 按住 100ms 的时长误差（每种 40 次）==`n"
-for name in ["sleep", "timer", "timer+spin", "spin"]
+; for name in ["timer", "timer+spin1000", "timer-segment+spin1000"]
+for name in ["timer-segment20", "timer+spin10000"]
 {
     if (TimerHandle = 0 && InStr(name, "timer"))
         continue
     s := MeasureHold(name, 100, 40)
+    out .= Format("  {}：CPU {:.1f} ms，单核占用 {:.1f}%`n", name, s.cpuMs, s.cpuPercent)
     out .= Format("  {:-10s} 时长误差 ms：最小 {:.3f}  中位 {:.3f}  最大 {:.3f}  标准差 {:.3f}`n"
         , name, s.min, s.median, s.max, s.sd)
 }
@@ -74,31 +67,6 @@ CreateHighResTimer()
     return DllCall("CreateWaitableTimerExW", "Ptr", 0, "Ptr", 0, "UInt", 0x2, "UInt", 0x1F0003, "Ptr")
 }
 
-WaitSleep(targetQpc)
-{
-    global QpcFreq
-    Loop
-    {
-        remainingMs := (targetQpc - Qpc()) * 1000 / QpcFreq
-        if (remainingMs <= 0)
-            return
-        Sleep(Min(10, Max(1, Floor(remainingMs))))
-    }
-}
-
-WaitSleepSpin(targetQpc)
-{
-    global QpcFreq
-    Loop
-    {
-        remainingUs := (targetQpc - Qpc()) * 1000000 / QpcFreq
-        if (remainingUs <= 0)
-            return
-        if (remainingUs > 500)
-            Sleep(1)
-    }
-}
-
 WaitTimer(targetQpc)
 {
     global QpcFreq, TimerHandle
@@ -111,14 +79,36 @@ WaitTimer(targetQpc)
     DllCall("WaitForSingleObject", "Ptr", TimerHandle, "UInt", 0xFFFFFFFF)
 }
 
-WaitTimerSpin(targetQpc)
+WaitTimerSegment(targetQpc)
+{
+    global QpcFreq, TimerHandle
+    due := Buffer(8, 0)
+    Loop
+    {
+        remainingUs := (targetQpc - Qpc()) * 1000000 / QpcFreq
+        if (remainingUs <= 0)
+            return
+
+        waitUs := Min(20000, remainingUs)
+        NumPut("Int64", -Max(1, Round(waitUs * 10)), due)
+        if !DllCall("SetWaitableTimer", "Ptr", TimerHandle, "Ptr", due, "Int", 0, "Ptr", 0, "Ptr", 0, "Int", 0)
+            throw OSError()
+        result := DllCall("WaitForSingleObject", "Ptr", TimerHandle, "UInt", 0xFFFFFFFF, "UInt")
+        if (result = 0xFFFFFFFF)
+            throw OSError()
+        if (result != 0)
+            throw Error("等待定时器返回异常：" result)
+    }
+}
+
+WaitTimerSpin(targetQpc, spinUs)
 {
     global QpcFreq, TimerHandle
     remainingUs := (targetQpc - Qpc()) * 1000000 / QpcFreq
-    if (remainingUs > 300)
+    if (remainingUs > spinUs)
     {
         due := Buffer(8, 0)
-        NumPut("Int64", -Round((remainingUs - 300) * 10), due)
+        NumPut("Int64", -Round((remainingUs - spinUs) * 10), due)
         DllCall("SetWaitableTimer", "Ptr", TimerHandle, "Ptr", due, "Int", 0, "Ptr", 0, "Ptr", 0, "Int", 0)
         DllCall("WaitForSingleObject", "Ptr", TimerHandle, "UInt", 0xFFFFFFFF)
     }
@@ -127,31 +117,52 @@ WaitTimerSpin(targetQpc)
     }
 }
 
-WaitSpin(targetQpc)
+WaitTimerSegmentSpin(targetQpc)
 {
+    global QpcFreq, TimerHandle
+    due := Buffer(8, 0)
+    Loop
+    {
+        remainingUs := (targetQpc - Qpc()) * 1000000 / QpcFreq
+        if (remainingUs <= 1000)
+            break
+
+        waitUs := Min(5000, remainingUs - 1000)
+        NumPut("Int64", -Max(1, Round(waitUs * 10)), due)
+        if !DllCall("SetWaitableTimer", "Ptr", TimerHandle, "Ptr", due, "Int", 0, "Ptr", 0, "Ptr", 0, "Int", 0)
+            throw OSError()
+        result := DllCall("WaitForSingleObject", "Ptr", TimerHandle, "UInt", 0xFFFFFFFF, "UInt")
+        if (result = 0xFFFFFFFF)
+            throw OSError()
+        if (result != 0)
+            throw Error("等待定时器返回异常：" result)
+    }
     while (Qpc() < targetQpc)
     {
     }
 }
 
-MeasureStrategy(name, intervalMs, samples)
+MeasureStrategy(name, intervalMs, samples, eventHz := 0)
 {
     global QpcFreq
     lates := []
+    cpuStart := ProcessCpuMs()
     start := Qpc()
     Loop samples
     {
-        target := start + Round(A_Index * intervalMs * QpcFreq / 1000)
+        target := start + (eventHz > 0 ? Round(A_Index * QpcFreq / eventHz) : Round(A_Index * intervalMs * QpcFreq / 1000))
         WaitByName(name, target)
         lates.Push((Qpc() - target) * 1000 / QpcFreq)
     }
-    return Stats(lates)
+    return StatsWithCpu(lates, cpuStart, start)
 }
 
 MeasureHold(name, holdMs, samples)
 {
     global QpcFreq
     errors := []
+    cpuStart := ProcessCpuMs()
+    wallStart := Qpc()
     Loop samples
     {
         start := Qpc()
@@ -161,19 +172,39 @@ MeasureHold(name, holdMs, samples)
         WaitByName(name, start + Round((50 + holdMs) * QpcFreq / 1000))
         errors.Push((Qpc() - t0) * 1000 / QpcFreq - holdMs)
     }
-    return Stats(errors)
+    return StatsWithCpu(errors, cpuStart, wallStart)
 }
 
 WaitByName(name, target)
 {
     switch name
     {
-        case "sleep": WaitSleep(target)
-        case "sleep+spin": WaitSleepSpin(target)
         case "timer": WaitTimer(target)
-        case "timer+spin": WaitTimerSpin(target)
-        case "spin": WaitSpin(target)
+        case "timer-segment20": WaitTimerSegment(target)
+        case "timer+spin1000": WaitTimerSpin(target, 1000)
+        case "timer+spin10000": WaitTimerSpin(target, 10000)
+        case "timer-segment+spin1000": WaitTimerSegmentSpin(target)
     }
+}
+
+ProcessCpuMs()
+{
+    times := Buffer(32, 0)
+    process := DllCall("Kernel32\GetCurrentProcess", "Ptr")
+    if !DllCall("Kernel32\GetProcessTimes", "Ptr", process, "Ptr", times.Ptr, "Ptr", times.Ptr + 8, "Ptr", times.Ptr + 16, "Ptr", times.Ptr + 24, "Int")
+        throw OSError()
+    return (NumGet(times, 16, "Int64") + NumGet(times, 24, "Int64")) / 10000
+}
+
+StatsWithCpu(values, cpuStart, wallStart)
+{
+    global QpcFreq
+    elapsedMs := (Qpc() - wallStart) * 1000 / QpcFreq
+    cpuMs := ProcessCpuMs() - cpuStart
+    result := Stats(values)
+    result.cpuMs := cpuMs
+    result.cpuPercent := elapsedMs > 0 ? cpuMs / elapsedMs * 100 : 0
+    return result
 }
 
 Stats(values)
