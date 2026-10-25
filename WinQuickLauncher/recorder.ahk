@@ -3,8 +3,8 @@
 #Include util.ahk
 
 ; 独立的 Raw Input 录制器。
-; Ctrl+2：进入待录制状态 / 停止并保存录制。
-; Ctrl+3：开始 / 停止回放。
+; F6：进入待录制状态 / 停止并保存录制。
+; F7：开始 / 停止回放。
 ; 所有公开状态与函数均使用 Rec_ 前缀，便于后续 #Include 到 run.ahk。
 
 global Rec_State := "idle"                 ; idle | armed | recording | save_pending | replaying
@@ -29,6 +29,7 @@ global Rec_ActiveReplayCount := 1
 global Rec_ReplayStopRequested := false
 global Rec_ReplayDownKeys := Map()
 global Rec_ReplayMouseDowns := Map()
+global Rec_TimerHandle := 0
 
 Rec_EnableDpiAwareness()
 Rec_InitializeQpc()
@@ -36,8 +37,8 @@ Rec_CreateInputReceiver()
 Log("Recorder | Raw Input 接收器已初始化")
 OnExit(Rec_OnExit)
 
-$^2::Rec_Toggle()
-$^3::Rec_ToggleReplay()
+$~F6 up::Rec_Toggle()
+$F7::Rec_ToggleReplay()
 
 Rec_Configure(filePath, replayCount)
 {
@@ -66,15 +67,24 @@ Rec_EnableDpiAwareness()
 
 Rec_InitializeQpc()
 {
-    global Rec_QpcFrequency, Rec_DragWidth, Rec_DragHeight
+    global Rec_QpcFrequency, Rec_DragWidth, Rec_DragHeight, Rec_TimerHandle
 
     frequencyBuffer := Buffer(8, 0)
     if !DllCall("Kernel32\QueryPerformanceFrequency", "Ptr", frequencyBuffer)
         throw Error("无法初始化 QueryPerformanceCounter。")
 
     Rec_QpcFrequency := NumGet(frequencyBuffer, 0, "Int64")
+    Rec_TimerHandle := Rec_CreateHighResTimer()
+    if (Rec_TimerHandle = 0)
+        Log("Recorder | 高精度定时器创建失败，回放等待降级为 Sleep")
     Rec_DragWidth := DllCall("User32\GetSystemMetrics", "Int", 68, "Int")
     Rec_DragHeight := DllCall("User32\GetSystemMetrics", "Int", 69, "Int")
+}
+
+Rec_CreateHighResTimer()
+{
+    ; CREATE_WAITABLE_TIMER_HIGH_RESOLUTION = 0x2，TIMER_ALL_ACCESS = 0x1F0003
+    return DllCall("CreateWaitableTimerExW", "Ptr", 0, "Ptr", 0, "UInt", 0x2, "UInt", 0x1F0003, "Ptr")
 }
 
 Rec_CreateInputReceiver()
@@ -178,12 +188,6 @@ Rec_Toggle()
 {
     global Rec_State
 
-    if (Rec_State = "replaying")
-    {
-        Log("Replay | 忽略 Ctrl+2：回放流程尚未结束")
-        return
-    }
-
     if (Rec_State = "idle")
         Rec_Arm()
     else
@@ -202,7 +206,8 @@ Rec_Arm()
     Rec_MouseDowns := Map()
     Rec_RawInputErrorCount := 0
     Rec_State := "armed"
-    Rec_ShowStatus("待录制 · Ctrl+2 取消", 0, true)
+    LogSessionOpen()
+    Rec_ShowStatus("待录制中 · 再次按下取消", 0, true)
     Log("Recorder | 进入待录制状态")
 }
 
@@ -214,6 +219,7 @@ Rec_Stop()
     {
         Rec_State := "idle"
         Log("Recorder | 待录制状态已取消：没有有效事件")
+        LogSessionClose()
         Rec_ShowStatus("已取消录制", 2000)
         return
     }
@@ -237,9 +243,9 @@ Rec_Stop()
     catch Error as err
     {
         Log("Recorder | 保存失败：" err.Message)
-        Rec_ShowStatus("保存失败 · Ctrl+2 重试")
+        Rec_ShowStatus("保存失败 · 再次按下重试")
         MsgBox("录制保存失败，数据仍保留在内存中。`n"
-            "关闭提示后可按 Ctrl+2 重试；退出或重载脚本会丢失这些数据。`n`n"
+            "关闭提示后再次按下录制键重试；退出或重载脚本会丢失这些数据。`n`n"
             err.Message, "键鼠录制", "Icon!")
         return
     }
@@ -249,6 +255,7 @@ Rec_Stop()
     Rec_DownKeys := Map()
     Rec_MouseDowns := Map()
     Rec_ShowStatus("录制已保存", 2000)
+    LogSessionClose()
 }
 
 Rec_OnWmInput(wParam, lParam, msg, hwnd)
@@ -324,9 +331,8 @@ Rec_HandleRawKeyboard(rawData, dataOffset)
     isKeyUp := (flags & 0x01) != 0       ; RI_KEY_BREAK
     isExtended := (flags & 0x02) != 0    ; RI_KEY_E0
 
-    ; 控制热键的数字键不写入事件，普通数字键仍可录制。
-    if (((virtualKey = 0x32 || virtualKey = 0x33) && GetKeyState("Ctrl", "P"))
-        || virtualKey = 0 || virtualKey = 0xFF)
+    ; 无效键码不写入事件。
+    if (virtualKey = 0 || virtualKey = 0xFF)
         return
 
     if (Rec_State = "armed" && isKeyUp)
@@ -428,7 +434,7 @@ Rec_Begin(qpc)
 
     Rec_RecordStartQpc := qpc
     Rec_State := "recording"
-    Rec_ShowStatus("脚本录制中 · Ctrl+2 停止")
+    Rec_ShowStatus("脚本录制中 · 再次按下停止")
     Log("Recorder | 录制开始")
 }
 
@@ -556,7 +562,7 @@ Rec_SaveRecording()
 
 Rec_OnExit(exitReason, exitCode)
 {
-    global Rec_State
+    global Rec_State, Rec_TimerHandle
 
     Log("Recorder | 脚本退出：reason=" exitReason " code=" exitCode)
     if (Rec_State = "recording")
@@ -568,6 +574,9 @@ Rec_OnExit(exitReason, exitCode)
     ; 进程退出会自动注销；这里显式注销避免作为库使用时遗留注册。
     try Rec_UnregisterRawInput()
     try Rec_DestroyStatus()
+    if (Rec_TimerHandle != 0)
+        try DllCall("CloseHandle", "Ptr", Rec_TimerHandle)
+    LogSessionClose()
 }
 
 Rec_UnregisterRawInput()
@@ -587,7 +596,7 @@ Rec_UnregisterRawInput()
     DllCall("User32\RegisterRawInputDevices", "Ptr", rawDevices, "UInt", 2, "UInt", ridSize)
 }
 
-; 热键只切换状态，播放交给一次性定时器，避免占住 Ctrl+3 热键线程。
+; 热键只切换状态，播放交给一次性定时器，避免占住热键线程。
 Rec_ToggleReplay()
 {
     global Rec_State, Rec_ReplayStopRequested, Rec_ReplayDownKeys, Rec_ReplayMouseDowns
@@ -596,12 +605,12 @@ Rec_ToggleReplay()
     if (Rec_State = "replaying")
     {
         Rec_ReplayStopRequested := true
-        Log("Replay | 收到 Ctrl+3 停止请求")
+        Log("Replay | 收到停止请求")
         return
     }
     if (Rec_State != "idle")
     {
-        Log("Replay | 忽略 Ctrl+3：当前状态=" Rec_State)
+        Log("Replay | 忽略回放热键：当前状态=" Rec_State)
         return
     }
 
@@ -610,9 +619,10 @@ Rec_ToggleReplay()
     Rec_ReplayStopRequested := false
     Rec_ReplayDownKeys := Map()
     Rec_ReplayMouseDowns := Map()
+    LogSessionOpen()
     Rec_State := "replaying"
     Log("Replay | 收到回放请求，进入 replaying 状态")
-    Rec_ShowStatus("脚本播放中 · Ctrl+3 停止", 0, true)
+    Rec_ShowStatus("脚本播放中 · 再次按下停止", 0, true)
     SetTimer(Rec_Replay, -1)
 }
 
@@ -628,11 +638,11 @@ Rec_Replay()
 
     try
     {
-        ; 每次重新读取并校验，直接使用返回的数据，不二次读文件。
-        Log("Replay | 调用格式校验：文件=" Rec_OutputFile)
-        data := Rec_ValidateRecording(Rec_OutputFile)
+        ; 每次重新读取，直接使用返回的数据，不二次读文件。
+        Log("Replay | 读取录制文件：文件=" Rec_OutputFile)
+        data := Rec_LoadRecording(Rec_OutputFile)
         total := data.Events.Length
-        Log("Replay | 格式校验通过：事件数=" total)
+        Log("Replay | 读取完成：事件数=" total)
 
         if (total > 0 && !Rec_ReplayStopRequested)
         {
@@ -695,6 +705,7 @@ Rec_Replay()
         finally
         {
             Rec_State := "idle"
+            LogSessionClose()
         }
     }
 
@@ -708,19 +719,32 @@ Rec_Replay()
     Rec_ShowStatus(Rec_ReplayStopRequested ? "已停止播放" : "脚本播放完成", 2000)
 }
 
-; 按绝对时刻等待；到期事件也处理一次消息，保证密集回放时能响应 Ctrl+3。
+; 按绝对时刻等待，使用高精度 waitable timer；到期后处理一次消息。
 Rec_ReplayWaitUntil(targetQpc)
 {
-    global Rec_ReplayStopRequested, Rec_QpcFrequency
+    global Rec_ReplayStopRequested, Rec_QpcFrequency, Rec_TimerHandle
+    due := Buffer(8, 0)
     while !Rec_ReplayStopRequested
     {
-        remainingMs := (targetQpc - Rec_GetQpc()) * 1000 / Rec_QpcFrequency
-        if (remainingMs <= 0)
+        remainingUs := (targetQpc - Rec_GetQpc()) * 1000000 / Rec_QpcFrequency
+        if (remainingUs <= 0)
         {
             Sleep(-1)
             return !Rec_ReplayStopRequested
         }
-        Sleep(Min(10, Max(1, Floor(remainingMs))))
+
+        if (Rec_TimerHandle = 0)
+        {
+            ; 仅为兼容旧系统：高精度定时器不可用时回退。
+            Sleep(Min(10, Max(1, Floor(remainingUs / 1000))))
+            continue
+        }
+
+        NumPut("Int64", -Max(1, Round(remainingUs * 10)), due)   ; 负数表示相对时间，单位 100ns
+        if !DllCall("SetWaitableTimer", "Ptr", Rec_TimerHandle, "Ptr", due, "Int", 0, "Ptr", 0, "Ptr", 0, "Int", 0)
+            throw OSError()
+        if (DllCall("WaitForSingleObject", "Ptr", Rec_TimerHandle, "UInt", 0xFFFFFFFF) != 0)
+            throw Error("等待高精度定时器失败。")
     }
     return false
 }
@@ -873,178 +897,39 @@ Rec_ReplayReleaseInputs()
     return failures
 }
 
-; 校验并解析录制文件；失败时抛出异常，不修改文件或录制状态。
-Rec_ValidateRecording(filePath)
+; 解析录制文件：按首字段分派记录类型，字段按位置直接取值，不做校验。
+Rec_LoadRecording(filePath)
 {
     startedAt := A_TickCount
-    Log("ValidateRecording | 开始校验：文件=" filePath)
-    try
-    {
-        data := Rec_ParseRecordingFile(filePath)
-        Log("ValidateRecording | 校验通过：文件=" filePath " 格式号=" data.Version " 显示器数=" data.Monitors.Length " 事件数=" data.Events.Length " 耗时ms=" (A_TickCount - startedAt))
-        if (data.Events.Length = 0)
-            Log("ValidateRecording | 文件格式合法，但没有可回放事件")
-        return data
-    }
-    catch Error as err
-    {
-        Log("ValidateRecording | 校验失败：文件=" filePath " 耗时ms=" (A_TickCount - startedAt) " 原因=" err.Message)
-        throw err
-    }
-}
-
-Rec_ParseRecordingFile(filePath)
-{
-    Log("ValidateRecording | 读取文件：编码=UTF-8")
-    try
-        content := FileRead(filePath, "UTF-8")
-    catch Error as err
-        throw Error("无法读取录制文件：" filePath "`n" err.Message)
-
-    Log("ValidateRecording | 读取完成：字符数=" StrLen(content))
-    ; 接受文件末尾的换行；文件内部空行仍视为格式错误。
-    originalLength := StrLen(content)
-    content := RTrim(content, "`r`n")
-    Log("ValidateRecording | 末尾换行处理：移除字符数=" (originalLength - StrLen(content)) " 剩余字符数=" StrLen(content))
-    if (content = "")
-        throw Error("录制文件为空：" filePath)
-
+    Log("Recorder | 读取录制文件：文件=" filePath)
+    content := FileRead(filePath, "UTF-8")
     data := {Version: 1, VirtualScreen: [], Monitors: [], Events: [], EventLines: []}
-    lineCount := 0
-    eventsStarted := false
 
-    Log("ValidateRecording | 开始逐行解析")
     Loop Parse, content, "`n"
     {
-        lineNumber := A_Index
-        lineCount := lineNumber
-        line := A_LoopField
-        if (SubStr(line, -1) = "`r")
-            line := SubStr(line, 1, StrLen(line) - 1)
+        line := RTrim(A_LoopField, "`r")
+        if (line = "")
+            continue
         fields := StrSplit(line, "`t")
-
-        Log("ValidateRecording | 第 " lineNumber " 行：字符数=" StrLen(line) " 字段数=" fields.Length)
-        if (lineNumber = 1)
+        if (fields[1] == "VSCREEN")
+            data.VirtualScreen := [Integer(fields[2]), Integer(fields[3]), Integer(fields[4]), Integer(fields[5])]
+        else if (fields[1] == "MONITOR")
+            data.Monitors.Push([Integer(fields[2]), Integer(fields[3]), Integer(fields[4]), Integer(fields[5]), Integer(fields[6])])
+        else if (fields[1] == "EVENT")
         {
-            if (fields.Length != 2)
-                Rec_RecordingFormatError(lineNumber, "文件头应为 WQLREC<TAB>1")
-            if !(fields[1] == "WQLREC") || !(fields[2] == "1")
-                Rec_RecordingFormatError(lineNumber, "文件标识或格式号不支持，应为 WQLREC<TAB>1")
-            Log("ValidateRecording | 第 " lineNumber " 行：文件头通过，格式号=1")
-            continue
+            data.Events.Push(Rec_ParseEvent(fields))
+            data.EventLines.Push(A_Index)
         }
-
-        if (lineNumber = 2)
-        {
-            if (fields.Length != 5)
-                Rec_RecordingFormatError(lineNumber, "VSCREEN 应有 5 个字段")
-            if !(fields[1] == "VSCREEN")
-                Rec_RecordingFormatError(lineNumber, "文件头之后必须是 VSCREEN")
-            Loop 4
-                data.VirtualScreen.Push(Rec_ParseRecordingInteger(fields[A_Index + 1], lineNumber, "VSCREEN 数值"))
-            Log("ValidateRecording | 第 " lineNumber " 行：VSCREEN 通过" " left=" data.VirtualScreen[1] " top=" data.VirtualScreen[2] " width=" data.VirtualScreen[3] " height=" data.VirtualScreen[4])
-            continue
-        }
-
-        if (fields[1] == "MONITOR")
-        {
-            Log("ValidateRecording | 第 " lineNumber " 行：识别为 MONITOR")
-            if eventsStarted
-                Rec_RecordingFormatError(lineNumber, "MONITOR 必须位于所有 EVENT 之前")
-            if (fields.Length != 6)
-                Rec_RecordingFormatError(lineNumber, "MONITOR 应有 6 个字段")
-            monitor := []
-            Loop 5
-                monitor.Push(Rec_ParseRecordingInteger(fields[A_Index + 1], lineNumber, "MONITOR 数值"))
-            data.Monitors.Push(monitor)
-            Log("ValidateRecording | 第 " lineNumber " 行：MONITOR 通过" " id=" monitor[1] " left=" monitor[2] " top=" monitor[3] " right=" monitor[4] " bottom=" monitor[5] " 累计显示器数=" data.Monitors.Length)
-            continue
-        }
-
-        if !(fields[1] == "EVENT")
-            Rec_RecordingFormatError(lineNumber, "应为 MONITOR 或 EVENT 记录")
-        Log("ValidateRecording | 第 " lineNumber " 行：识别为 EVENT")
-        if (data.Monitors.Length = 0)
-            Rec_RecordingFormatError(lineNumber, "EVENT 之前缺少 MONITOR")
-        if (fields.Length < 3)
-            Rec_RecordingFormatError(lineNumber, "EVENT 缺少时间偏移或事件类型")
-
-        if !eventsStarted
-            Log("ValidateRecording | 第 " lineNumber " 行：进入事件区，已解析显示器数=" data.Monitors.Length)
-        eventsStarted := true
-        eventType := fields[3]
-        if !(eventType == "KD" || eventType == "KU" || eventType == "MD" || eventType == "MU" || eventType == "W" || eventType == "HW")
-            Rec_RecordingFormatError(lineNumber, "未知事件类型：" eventType)
-
-        expectedFields := (eventType == "MU") ? 7 : 6
-        Log("ValidateRecording | 第 " lineNumber " 行：事件类型=" eventType " 预期字段数=" expectedFields " 实际字段数=" fields.Length)
-        if (fields.Length != expectedFields)
-            Rec_RecordingFormatError(lineNumber, eventType " 应有 " expectedFields " 个字段")
-
-        offsetUs := Rec_ParseRecordingInteger(fields[2], lineNumber, "时间偏移")
-        event := [offsetUs, eventType]
-        if (eventType == "KD" || eventType == "KU")
-        {
-            virtualKey := Rec_ParseRecordingInteger(fields[4], lineNumber, "虚拟键码")
-            scanCode := Rec_ParseRecordingInteger(fields[5], lineNumber, "扫描码")
-            if !(fields[6] == "0" || fields[6] == "1")
-                Rec_RecordingFormatError(lineNumber, "键盘扩展标志必须为 0 或 1")
-            Log("ValidateRecording | 第 " lineNumber " 行：键盘扩展标志通过")
-            event.Push(virtualKey, scanCode, Integer(fields[6]))
-        }
-        else if (eventType == "MD" || eventType == "MU")
-        {
-            button := fields[4]
-            if !(button == "L" || button == "R" || button == "M")
-                Rec_RecordingFormatError(lineNumber, "鼠标按钮必须为 L、R 或 M")
-            Log("ValidateRecording | 第 " lineNumber " 行：鼠标按钮枚举通过")
-            x := Rec_ParseRecordingInteger(fields[5], lineNumber, "鼠标 X 坐标")
-            y := Rec_ParseRecordingInteger(fields[6], lineNumber, "鼠标 Y 坐标")
-            event.Push(button, x, y)
-            if (eventType == "MU")
-            {
-                if !(fields[7] == "0" || fields[7] == "1")
-                    Rec_RecordingFormatError(lineNumber, "拖拽标志必须为 0 或 1")
-                Log("ValidateRecording | 第 " lineNumber " 行：拖拽标志通过")
-                event.Push(Integer(fields[7]))
-            }
-        }
-        else
-        {
-            delta := Rec_ParseRecordingInteger(fields[4], lineNumber, "滚轮增量")
-            x := Rec_ParseRecordingInteger(fields[5], lineNumber, "滚轮 X 坐标")
-            y := Rec_ParseRecordingInteger(fields[6], lineNumber, "滚轮 Y 坐标")
-            event.Push(delta, x, y)
-        }
-
-        data.Events.Push(event)
-        data.EventLines.Push(lineNumber)
-        Log("ValidateRecording | 第 " lineNumber " 行：EVENT 通过" " 类型=" eventType " 时间偏移us=" offsetUs " 累计事件数=" data.Events.Length)
     }
 
-    if (lineCount < 2)
-        Rec_RecordingFormatError(2, "缺少 VSCREEN 记录")
-    if (data.Monitors.Length = 0)
-        Rec_RecordingFormatError(3, "缺少 MONITOR 记录")
-    Log("ValidateRecording | 必要记录检查通过")
+    Log("Recorder | 读取完成：显示器数=" data.Monitors.Length " 事件数=" data.Events.Length " 耗时ms=" (A_TickCount - startedAt))
     return data
 }
 
-Rec_ParseRecordingInteger(value, lineNumber, fieldName)
+; KD/KU 与 W/HW 的第 4 字段起都是整数；MD/MU 的第 4 字段是按钮字母。
+Rec_ParseEvent(fields)
 {
-    Log("ValidateRecording | 第 " lineNumber " 行：检查整数字段=" fieldName)
-    if !RegExMatch(value, "^-?[0-9]+$")
-        Rec_RecordingFormatError(lineNumber, fieldName " 必须为十进制整数")
-    try
-        parsed := Integer(value)
-    catch Error
-        Rec_RecordingFormatError(lineNumber, fieldName " 无法转换为整数")
-    Log("ValidateRecording | 第 " lineNumber " 行：整数转换通过，字段=" fieldName)
-    return parsed
-}
-
-Rec_RecordingFormatError(lineNumber, reason)
-{
-    Log("ValidateRecording | 格式检查失败：第 " lineNumber " 行，" reason)
-    throw Error("录制文件格式错误：第 " lineNumber " 行，" reason)
+    if (fields[3] == "MD" || fields[3] == "MU")
+        return [Integer(fields[2]), fields[3], fields[4], Integer(fields[5]), Integer(fields[6])]
+    return [Integer(fields[2]), fields[3], Integer(fields[4]), Integer(fields[5]), Integer(fields[6])]
 }
