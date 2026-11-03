@@ -2,7 +2,8 @@
 #SingleInstance Force
 #Include util.ahk
 #Include recorder.ahk
-TraySetIcon(A_ScriptDir "\ico.ico")
+#Include memo.ahk
+TraySetIcon(A_ScriptDir "\ico\ico.ico")
 
 ; ============================================================
 ; My Launcher
@@ -39,6 +40,8 @@ global ScriptModTime := FileGetTime(A_ScriptFullPath, "M")
 
 ^1::ToggleLauncher()
 
+#HotIf Memo_IsDialogActive()
+^Enter::Memo_SaveEditor()
 #HotIf IsLauncherActive()
 Escape::
 {
@@ -68,6 +71,7 @@ global CfgReplayCount := 1
 LoadItems()
 LoadConfig()
 Rec_Configure(CfgRecordingFile, CfgReplayCount)
+Memo_Init()
 
 LoadConfig()
 {
@@ -163,6 +167,7 @@ ShowLauncher()
 
     Items := []
     LoadItems()
+    Memo_RefreshNow()
 
     CoordMode("Mouse", "Screen")
     MouseGetPos(&mx, &my)
@@ -201,7 +206,10 @@ BuildContent()
     if (ViewMode = "settings")
         CreateSettingsView()
     else
+    {
         CreateListView()
+        Memo_Build(ContentGui)
+    }
 
     ContentGui.Show("x" ScreenX " y" ScreenY " w" ScreenW " h" ScreenH)
     WinSetTransparent(CfgOpacity, "ahk_id " ContentGui.Hwnd)
@@ -214,6 +222,7 @@ BuildContent()
 DestroyContent()
 {
     global ContentGui
+    Memo_DestroyView()
     if IsObject(ContentGui)
     {
         ContentGui.Destroy()

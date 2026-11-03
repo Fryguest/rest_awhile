@@ -1,5 +1,5 @@
 items.txt
 config.txt
-launcher.log
-ico.png
+logs/
 recording.tsv
+memo-data.tsv
